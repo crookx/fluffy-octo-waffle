@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { adminAuth, adminDb } from './lib/firebase-admin';
-import { cookies } from 'next/headers';
 
 // Force the middleware to run on the Node.js runtime
 export const runtime = 'nodejs';
@@ -9,8 +8,7 @@ export const runtime = 'nodejs';
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const cookiesStore = await cookies();
-  const sessionCookie = cookiesStore.get('__session')?.value;
+  const sessionCookie = request.cookies.get('__session')?.value;
   
   console.log(`[Middleware] ${request.method} ${pathname} - Session Cookie: ${sessionCookie ? '[present]' : '[missing]'}`);
   
@@ -31,6 +29,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
       }
     } catch (e) {
+      console.warn('[Middleware] Auth page session verification failed:', e);
       // If verification fails, clear cookie and show login/signup as usual
       const response = NextResponse.next();
       response.cookies.set('__session', '', { maxAge: 0 });
@@ -78,6 +77,7 @@ export async function middleware(request: NextRequest) {
         }
 
       } catch (error) {
+        console.warn('[Middleware] Protected route session verification failed:', error);
         // Invalid session cookie, clear it and redirect to login
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);

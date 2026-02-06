@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,6 +70,27 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+    const checkExistingSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!isActive || !data?.authenticated) return;
+        const role = data.role ?? 'BUYER';
+        const redirectTarget = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/dashboard' : '/';
+        router.replace(redirectTarget);
+      } catch (error) {
+        console.warn('[Login] Unable to check existing session:', error);
+      }
+    };
+    checkExistingSession();
+    return () => {
+      isActive = false;
+    };
+  }, [router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
