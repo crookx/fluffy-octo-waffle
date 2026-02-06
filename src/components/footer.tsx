@@ -24,6 +24,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Legal & Contact</h3>
             <ul className="space-y-2 text-sm">
+              <li><Link href="/trust" className="text-muted-foreground hover:text-primary">Trust &amp; Verification</Link></li>
               <li><Link href="/terms" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
               <li><Link href="/privacy" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
               <li><Link href="/contact" className="text-muted-foreground hover:text-primary">Contact Us</Link></li>
@@ -33,7 +34,12 @@ export function Footer() {
         </div>
         <div className="mt-8 border-t pt-4 text-center text-xs text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} Kenya Land Trust. All rights reserved.</p>
-            <p className="mt-2">Disclaimer: Kenya Land Trust provides an approval status based on submitted documents but does not constitute a legal guarantee of title. Buyers are advised to conduct their own due diligence.</p>
+            <p className="mt-2">
+              Kenya Land Trust is an independent marketplace and is not affiliated with the Government of Kenya.
+            </p>
+            <p className="mt-2">
+              Disclaimer: Kenya Land Trust provides an approval status based on submitted documents but does not constitute a legal guarantee of title. Buyers are advised to conduct their own due diligence.
+            </p>
         </div>
       </div>
     </footer>

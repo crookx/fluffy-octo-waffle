@@ -25,19 +25,19 @@ const badgeMap: Record<ListingStatus, BadgeInfo> = {
     variant: 'success',
     icon: ShieldCheck,
     label: 'Approved',
-    description: 'This listing has been reviewed and approved by our team.',
+    description: 'Reviewed based on seller-submitted documents. Approval is not a legal guarantee of title.',
   },
   pending: {
     variant: 'warning',
     icon: ShieldQuestion,
     label: 'Pending',
-    description: 'This listing is pending review from our team.',
+    description: 'Submitted for review. No approval or verification has been completed yet.',
   },
   rejected: {
     variant: 'destructive',
     icon: ShieldAlert,
     label: 'Rejected',
-    description: 'This listing was rejected after review. Proceed with caution.',
+    description: 'Rejected after review of submitted information. Do not proceed without independent verification.',
   },
 };
 

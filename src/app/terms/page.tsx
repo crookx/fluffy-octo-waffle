@@ -26,8 +26,14 @@ export default function TermsOfServicePage() {
               The services are provided "as-is." Kenya Land Trust makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties. While we provide a verification and approval process, this does not constitute a legal guarantee of title or the authenticity of a listing. Buyers are strongly advised to conduct their own independent due diligence before entering into any transaction.
             </p>
           </section>
+          <section>
+            <h2 className="text-xl font-semibold">4. Use of AI-Assisted Tools</h2>
+            <p>
+              We use AI-assisted tools to summarize documents, suggest trust badges, and detect suspicious patterns. These tools provide advisory insights and may contain errors. Final review decisions may still include human judgment, and you should not treat AI outputs as legal or professional advice.
+            </p>
+          </section>
            <section>
-            <h2 className="text-xl font-semibold">4. Governing Law</h2>
+            <h2 className="text-xl font-semibold">5. Governing Law</h2>
             <p>
              These Terms and Conditions shall be governed by and construed in accordance with the laws of the Republic of Kenya.
             </p>

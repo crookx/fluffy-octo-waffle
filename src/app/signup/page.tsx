@@ -92,8 +92,17 @@ export default function SignupPage() {
     console.log('handleAuthSuccess: Session created successfully.');
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
-    console.log('handleAuthSuccess: Redirecting to /dashboard');
-    window.location.href = '/dashboard';
+    let redirectUrl = '/dashboard';
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      const role = userDoc.exists() ? userDoc.data()?.role : null;
+      redirectUrl = role === 'ADMIN' ? '/admin' : '/dashboard';
+    } catch (roleError) {
+      console.error('handleAuthSuccess: Failed to read user role. Falling back to dashboard.', roleError);
+    }
+    console.log('handleAuthSuccess: Redirecting to', redirectUrl);
+    window.location.href = redirectUrl;
   }
 
 

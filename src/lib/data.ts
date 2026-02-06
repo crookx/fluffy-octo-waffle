@@ -63,8 +63,10 @@ const toListing = (doc: FirebaseFirestore.DocumentSnapshot, evidence: Evidence[]
 
     // Generate coordinates if they don't exist
     let coords = { latitude: data.latitude, longitude: data.longitude };
+    let isApproximateLocation = false;
     if (coords.latitude === undefined || coords.longitude === undefined) {
         coords = generateCoordsFromLocation(data.location);
+        isApproximateLocation = true;
     }
 
     // Convert all timestamp fields to serializable Date objects
@@ -77,6 +79,7 @@ const toListing = (doc: FirebaseFirestore.DocumentSnapshot, evidence: Evidence[]
         images, // Use the transformed images array
         latitude: coords.latitude,
         longitude: coords.longitude,
+        isApproximateLocation,
     };
     
     // Clean up old fields if they exist on the final object

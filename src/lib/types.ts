@@ -43,6 +43,7 @@ export type Listing = {
   landType: string; // e.g., "Agricultural", "Residential"
   latitude: number;
   longitude: number;
+  isApproximateLocation: boolean;
   status: ListingStatus;
   seller: {
     name: string;

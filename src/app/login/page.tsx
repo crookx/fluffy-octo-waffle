@@ -96,7 +96,16 @@ export default function LoginPage() {
     console.log('handleLoginSuccess: Session created successfully.');
     toast({ title: 'Login Successful', description: "Welcome back!" });
     
-    const redirectUrl = searchParams.get('redirect') || '/dashboard';
+    let fallbackRedirect = '/dashboard';
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      const role = userDoc.exists() ? userDoc.data()?.role : null;
+      fallbackRedirect = role === 'ADMIN' ? '/admin' : '/dashboard';
+    } catch (roleError) {
+      console.error('handleLoginSuccess: Failed to read user role. Falling back to dashboard.', roleError);
+    }
+    const redirectUrl = searchParams.get('redirect') || fallbackRedirect;
     console.log('handleLoginSuccess: Redirecting to', redirectUrl);
     window.location.href = redirectUrl;
   }

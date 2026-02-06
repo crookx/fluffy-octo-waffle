@@ -244,6 +244,9 @@ export default function NewListingPage() {
               {/* AI Description Generator */}
               <div className="space-y-4">
                  <FormLabel>Generate Description with AI</FormLabel>
+                 <p className="text-sm text-muted-foreground">
+                  AI-generated text is for convenience only. Review and edit to ensure accuracy before publishing.
+                 </p>
                  <Textarea 
                     placeholder="Enter key features as bullet points...&#10;- 5 acres prime land&#10;- Ready title deed&#10;- Water and electricity on site"
                     className="min-h-[100px]"
@@ -308,7 +311,9 @@ export default function NewListingPage() {
                 <div className="space-y-2">
                     <Label>Submitting for Review...</Label>
                     <Progress value={uploadProgress} />
-                    <p className="text-xs text-muted-foreground">Running AI analysis, please wait...</p>
+                    <p className="text-xs text-muted-foreground">
+                      Running AI analysis on submitted materials. AI results are advisory and do not replace human review.
+                    </p>
                 </div>
               )}
 
