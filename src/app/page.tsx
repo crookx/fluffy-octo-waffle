@@ -53,6 +53,24 @@ import { FavoriteButton } from '@/components/favorite-button';
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
 const BADGE_OPTIONS: BadgeValue[] = ["Gold", "Silver", "Bronze"];
 
+const ListingCardSkeleton = () => (
+    <Card>
+        <CardHeader className="p-0">
+            <Skeleton className="aspect-[3/2] w-full" />
+        </CardHeader>
+        <CardContent className="p-4 space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-1/3 mt-2" />
+        </CardContent>
+        <CardFooter className="p-4 pt-0 flex justify-between items-center">
+            <Skeleton className="h-7 w-2/5" />
+            <Skeleton className="h-9 w-16" />
+        </CardFooter>
+    </Card>
+);
+
+
 export default function ListingsPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -325,20 +343,7 @@ export default function ListingsPage() {
 
       {(loading || isPending) && listings.length === 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array.from({length: 8}).map((_, i) => (
-                <Card key={i}>
-                    <CardHeader className="p-0">
-                        <Skeleton className="aspect-[3/2] w-full" />
-                    </CardHeader>
-                    <CardContent className="p-4">
-                        <Skeleton className="h-6 w-3/4 mb-2" />
-                        <Skeleton className="h-4 w-1/2" />
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0">
-                        <Skeleton className="h-8 w-1/2" />
-                    </CardFooter>
-                </Card>
-            ))}
+            {Array.from({length: 8}).map((_, i) => <ListingCardSkeleton key={i} />)}
         </div>
       ) : listings.length > 0 ? (
         <>

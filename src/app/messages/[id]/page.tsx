@@ -16,6 +16,49 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const ChatSkeleton = () => (
+    <Card className="h-full flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
+            <div className="flex items-center gap-3">
+                <Skeleton className="h-12 w-12 rounded-md" />
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                </div>
+            </div>
+            <Skeleton className="h-10 w-10 rounded-full" />
+        </CardHeader>
+        <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex items-end gap-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="p-3 rounded-lg bg-secondary space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-4 w-24" />
+                </div>
+            </div>
+            <div className="flex items-end gap-2 justify-end">
+                <div className="p-3 rounded-lg bg-primary/10 space-y-2">
+                     <Skeleton className="h-4 w-56" />
+                </div>
+            </div>
+            <div className="flex items-end gap-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                 <div className="p-3 rounded-lg bg-secondary space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                </div>
+            </div>
+        </CardContent>
+        <CardFooter className="border-t p-4">
+            <div className="w-full flex items-center gap-2">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-10" />
+            </div>
+        </CardFooter>
+    </Card>
+);
+
 
 export default function ConversationPage({ params }: { params: { id: string } }) {
     const { user } = useAuth();
@@ -103,7 +146,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
     };
 
     if (loading) {
-        return <Card className="h-full flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></Card>
+        return <ChatSkeleton />;
     }
 
     if (!conversation) {
