@@ -108,8 +108,7 @@ export default function SignupPage() {
 
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
-    // Using window.location.assign to ensure the browser sends the new session cookie with the next request.
-    // This is more reliable for HttpOnly cookies than client-side routing.
+    // On signup, we always go to the onboarding page.
     window.location.assign('/onboarding');
   }
 
