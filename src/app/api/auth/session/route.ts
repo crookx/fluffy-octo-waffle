@@ -1,6 +1,29 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 
+// This route is called to verify the session exists
+export async function GET(request: NextRequest) {
+  console.log('/api/auth/session GET: Checking if session exists.');
+  const cookieHeader = request.headers.get('cookie') || '';
+  console.log('/api/auth/session GET: Cookie header:', cookieHeader ? '[present]' : '[empty]');
+  
+  const sessionCookie = request.cookies.get('__session')?.value;
+  
+  if (!sessionCookie) {
+    console.log('/api/auth/session GET: No session cookie found.');
+    return NextResponse.json({ status: 'error', authenticated: false }, { status: 401 });
+  }
+
+  try {
+    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+    console.log('/api/auth/session GET: Session verified for user:', decodedToken.uid);
+    return NextResponse.json({ status: 'success', authenticated: true, uid: decodedToken.uid });
+  } catch (error: any) {
+    console.error('/api/auth/session GET: Session verification failed:', error.message);
+    return NextResponse.json({ status: 'error', authenticated: false }, { status: 401 });
+  }
+}
+
 // This route is called on login/signup to create a session cookie
 export async function POST(request: NextRequest) {
   console.log('/api/auth/session POST: Received request to create session cookie.');
@@ -12,19 +35,23 @@ export async function POST(request: NextRequest) {
   }
 
   // 5 days
-  const expiresIn = 60 * 60 * 24 * 5 * 1000;
+  const expiresInMs = 60 * 60 * 24 * 5 * 1000;
   console.log('/api/auth/session POST: Attempting to create session cookie...');
 
   try {
-    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: expiresInMs });
     console.log('/api/auth/session POST: Session cookie created successfully.');
 
+    // For development, allow localhost over HTTP. For production, require HTTPS.
+    const isSecureContext = process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://');
+    
     const options = { 
         name: '__session', 
         value: sessionCookie, 
-        maxAge: expiresIn, 
+        maxAge: expiresInMs / 1000, // Convert milliseconds to seconds for Next.js cookie
         httpOnly: true, 
-        secure: process.env.NODE_ENV === 'production',
+        secure: isSecureContext,
+        sameSite: 'lax' as const,
         path: '/' 
     };
     

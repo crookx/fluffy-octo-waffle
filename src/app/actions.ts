@@ -51,6 +51,48 @@ async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['
     }
 }
 
+// Server action to handle post-login redirect
+export async function handleLoginRedirectAction(redirectUrl?: string | null): Promise<string> {
+    console.log('[Server Action] handleLoginRedirectAction called with:', redirectUrl);
+    
+    const user = await getAuthenticatedUser();
+    if (!user) {
+        console.log('[Server Action] No authenticated user');
+        return '/login';
+    }
+
+    let finalRedirect = '/';
+    if (user.role === 'ADMIN') {
+        finalRedirect = '/admin';
+    } else if (user.role === 'SELLER') {
+        finalRedirect = '/dashboard';
+    }
+
+    // If a specific redirect URL is provided, validate it against the user's role
+    if (redirectUrl) {
+        try {
+            const redirectPath = new URL(redirectUrl, 'http://localhost').pathname;
+            const isAdminRoute = redirectPath.startsWith('/admin');
+            const isSellerRoute = ['/dashboard', '/listings/new'].some(p => redirectPath.startsWith(p)) || /^\/listings\/[^/]+\/edit$/.test(redirectPath);
+
+            // Only allow redirect if user has permission
+            if (isAdminRoute && user.role === 'ADMIN') {
+                finalRedirect = redirectUrl;
+            } else if (isSellerRoute && (user.role === 'SELLER' || user.role === 'ADMIN')) {
+                finalRedirect = redirectUrl;
+            } else if (!isAdminRoute && !isSellerRoute) {
+                // Public routes are fine
+                finalRedirect = redirectUrl;
+            }
+        } catch (err) {
+            console.error('[Server Action] Error parsing redirect URL:', err);
+        }
+    }
+
+    console.log('[Server Action] Returning redirect:', finalRedirect);
+    return finalRedirect;
+}
+
 // Action to search/filter listings
 export async function searchListingsAction(options: {
     query?: string;

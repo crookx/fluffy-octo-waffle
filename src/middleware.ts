@@ -9,12 +9,33 @@ export const runtime = 'nodejs';
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = cookies().get('__session')?.value;
+  const cookiesStore = await cookies();
+  const sessionCookie = cookiesStore.get('__session')?.value;
+  
+  console.log(`[Middleware] ${request.method} ${pathname} - Session Cookie: ${sessionCookie ? '[present]' : '[missing]'}`);
   
   // These are public pages, but if a user is logged in, we don't want them to see it.
   const authPages = ['/login', '/signup'];
   if (authPages.includes(pathname) && sessionCookie) {
-    return NextResponse.redirect(new URL('/', request.url));
+    // Try to verify the session cookie and redirect users to a role-appropriate page
+    try {
+      const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+      const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+      const userRole = userDoc.exists() ? userDoc.data()?.role : null;
+
+      if (userRole === 'ADMIN') {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      } else if (userRole === 'SELLER') {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      } else {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+    } catch (e) {
+      // If verification fails, clear cookie and show login/signup as usual
+      const response = NextResponse.next();
+      response.cookies.set('__session', '', { maxAge: 0 });
+      return response;
+    }
   }
 
   // All pages that require a user to be logged in just to access
@@ -31,6 +52,7 @@ export async function middleware(request: NextRequest) {
   // Handle all protected routes
   if (isGeneralProtectedRoute || isSellerRoute || isAdminRoute) {
       if (!sessionCookie) {
+        console.log(`[Middleware] ${pathname} requires auth but no session cookie found, redirecting to /login`);
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
@@ -42,8 +64,11 @@ export async function middleware(request: NextRequest) {
         const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
         const userRole = userDoc.exists() ? userDoc.data()?.role : null;
 
+        console.log(`[Middleware] ${pathname} - User: ${decodedToken.uid}, Role: ${userRole}`);
+
         // Admin Role Check
         if (isAdminRoute && userRole !== 'ADMIN') {
+          console.log(`[Middleware] ${pathname} requires ADMIN but user is ${userRole}, redirecting to /denied`);
           return NextResponse.redirect(new URL('/denied', request.url));
         }
 

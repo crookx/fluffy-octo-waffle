@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,8 +23,13 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ToastAction } from '@/components/ui/toast';
-import { ListingLocationPicker } from '@/components/listing-location-picker';
 import { FileDragAndDrop } from '@/components/file-drag-and-drop';
+
+// Dynamically import ListingLocationPicker to avoid Leaflet window access during SSR
+const ListingLocationPicker = dynamic(() => import('@/components/listing-location-picker').then(mod => ({ default: mod.ListingLocationPicker })), {
+  ssr: false,
+  loading: () => <div className="h-96 bg-muted animate-pulse rounded-lg" />,
+});
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),

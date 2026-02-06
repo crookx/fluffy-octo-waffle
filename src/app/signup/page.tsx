@@ -85,10 +85,13 @@ export default function SignupPage() {
         throw new Error(errorData.message || 'Failed to create session on the server.');
     }
 
+    // Wait longer for the cookie to be fully set in the browser
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
-    const redirectUrl = '/onboarding';
-    router.push(redirectUrl);
+    // Navigate directly to onboarding
+    router.push('/onboarding');
   }
 
 

@@ -77,45 +77,112 @@ export default function LoginPage() {
   });
   
   const handleLoginSuccess = async (user: User) => {
-    const idToken = await user.getIdToken();
-
-    const response = await fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Could not parse error response from server.' }));
-        throw new Error(errorData.message || 'Failed to create session on the server.');
-    }
-
-    toast({ title: 'Login Successful', description: "Welcome back!" });
-    
-    let fallbackRedirect = '/';
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-      const role = userDoc.exists() ? userDoc.data()?.role : 'BUYER';
-      if (role === 'ADMIN') {
-        fallbackRedirect = '/admin';
-      } else if (role === 'SELLER') {
-        fallbackRedirect = '/dashboard';
+      console.log('[Login] Starting handleLoginSuccess for user:', user.uid);
+      const idToken = await user.getIdToken();
+
+      console.log('[Login] Got idToken, calling /api/auth/session');
+      const response = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      
+      if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Could not parse error response from server.' }));
+          throw new Error(errorData.message || 'Failed to create session on the server.');
       }
-    } catch (roleError) {
-      // Fallback already set to '/'
+
+      console.log('[Login] Session cookie created, waiting 500ms for browser to process Set-Cookie');
+      // Wait longer for the cookie to be fully set in the browser
+      // The browser needs time to process the Set-Cookie header from the response
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Verify the session was actually created and is accessible
+      console.log('[Login] Verifying session creation...');
+      let sessionVerified = false;
+      for (let i = 0; i < 5; i++) {
+        try {
+          const verifyResponse = await fetch('/api/auth/session', {
+            method: 'GET',
+            credentials: 'include', // Include cookies in the request
+          });
+          if (verifyResponse.ok) {
+            console.log('[Login] Session verified on attempt', i + 1);
+            sessionVerified = true;
+            break;
+          }
+        } catch (err) {
+          console.log('[Login] Session verification attempt', i + 1, 'failed');
+        }
+        if (i < 4) await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      if (!sessionVerified) {
+        console.warn('[Login] Session verification failed, but proceeding anyway');
+      }
+
+      // Wait another moment for good measure before navigation
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      toast({ title: 'Login Successful', description: "Welcome back!" });
+      
+      let fallbackRedirect = '/';
+      let userRole = 'BUYER';
+      try {
+        console.log('[Login] Fetching user role from Firestore');
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        userRole = userDoc.exists() ? userDoc.data()?.role : 'BUYER';
+        console.log('[Login] User role:', userRole);
+        
+        if (userRole === 'ADMIN') {
+          fallbackRedirect = '/admin';
+        } else if (userRole === 'SELLER') {
+          fallbackRedirect = '/dashboard';
+        }
+      } catch (roleError) {
+        console.error('[Login] Error fetching user role:', roleError);
+        // Fallback already set to '/'
+      }
+      
+      // Validate the redirect URL against the user's role
+      let redirectUrl = searchParams.get('redirect') || fallbackRedirect;
+      console.log('[Login] Redirect URL from params:', searchParams.get('redirect'), 'Fallback:', fallbackRedirect, 'Final:', redirectUrl);
+      
+      const redirectPath = new URL(redirectUrl, 'http://localhost').pathname;
+      
+      // Check if user has access to the redirect URL
+      const isAdminRoute = redirectPath.startsWith('/admin');
+      const isSellerRoute = ['/dashboard', '/listings/new'].some(p => redirectPath.startsWith(p)) || /^\/listings\/[^/]+\/edit$/.test(redirectPath);
+      
+      if (isAdminRoute && userRole !== 'ADMIN') {
+        console.log('[Login] User not admin, using fallback');
+        redirectUrl = fallbackRedirect;
+      } else if (isSellerRoute && userRole !== 'SELLER' && userRole !== 'ADMIN') {
+        console.log('[Login] User not seller, using fallback');
+        redirectUrl = fallbackRedirect;
+      }
+      
+      console.log('[Login] Final redirect URL:', redirectUrl);
+      router.push(redirectUrl);
+      console.log('[Login] router.push called');
+    } catch (err: any) {
+      console.error('[Login] handleLoginSuccess error:', err);
+      throw err;
     }
-    const redirectUrl = searchParams.get('redirect') || fallbackRedirect;
-    router.push(redirectUrl);
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
+      console.log('[Login] Form submitted');
       await setPersistence(auth, values.rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      console.log('[Login] User authenticated, calling handleLoginSuccess');
       await handleLoginSuccess(userCredential.user);
     } catch (error: any) {
+      console.error('[Login] onSubmit error:', error);
       const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
       toast({
         variant: 'destructive',
