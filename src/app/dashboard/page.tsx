@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { formatRelative } from 'date-fns';
 import { notFound } from 'next/navigation';
+import type { UserProfile } from '@/lib/types';
 
 async function getAuthenticatedUser() {
     const sessionCookie = cookies().get('__session')?.value;
@@ -37,13 +38,20 @@ export default async function SellerDashboard() {
   }
 
   const listings = await getListingsForSeller(user.uid);
+  const userProfileDoc = await adminDb.collection('users').doc(user.uid).get();
+  if (!userProfileDoc.exists) {
+      // This should not happen if they are logged in and have a user record
+      return notFound();
+  }
+  const userProfile = userProfileDoc.data() as UserProfile;
+
 
   return (
     <div className="container mx-auto py-10">
       <Card>
         <CardHeader>
           <CardTitle>Seller Dashboard</CardTitle>
-          <CardDescription>Manage your property listings.</CardDescription>
+          <CardDescription>Welcome back, {userProfile.displayName}! Here you can manage your property listings.</CardDescription>
         </CardHeader>
         <CardContent>
            {listings.length > 0 ? (
@@ -61,6 +69,7 @@ export default async function SellerDashboard() {
                         <TableRow key={listing.id}>
                             <TableCell className="font-medium">
                                 <Link href={`/listings/${listing.id}`} className="hover:underline">{listing.title}</Link>
+
                             </TableCell>
                             <TableCell>
                                 <TrustBadge status={listing.badge} />
