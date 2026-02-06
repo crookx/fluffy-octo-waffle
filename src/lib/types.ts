@@ -23,6 +23,7 @@ export type Evidence = {
   summary?: string;
   content: string; // Plain text content for AI summarization, or filename if content not available
   verified: boolean;
+  url?: string; // Secure, temporary URL to view the file
 };
 
 export type ListingImage = {

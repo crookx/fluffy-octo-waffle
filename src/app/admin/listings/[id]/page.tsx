@@ -3,12 +3,13 @@ import Image from 'next/image';
 import { getListingById } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { FileText, AlertTriangle } from 'lucide-react';
+import { FileText, AlertTriangle, ExternalLink } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { AdminActions } from './_components/admin-actions';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { DynamicListingCarousel } from '@/components/dynamic-listing-carousel';
+import { cn } from '@/lib/utils';
 
 async function checkAdmin() {
   const sessionCookie = cookies().get('__session')?.value;
@@ -75,15 +76,28 @@ export default async function AdminReviewPage({ params }: { params: { id: string
             <Card>
             <CardHeader>
                 <CardTitle>Uploaded Evidence</CardTitle>
-                <CardDescription>Documents provided by the seller for verification.</CardDescription>
+                <CardDescription>Documents provided by the seller for verification. Click to view.</CardDescription>
             </CardHeader>
             <CardContent>
                 {listing.evidence && listing.evidence.length > 0 ? (
                 <ul className="space-y-3">
                     {listing.evidence.map((doc) => (
-                    <li key={doc.id} className="flex items-center gap-3 p-2 rounded-md border">
-                        <FileText className="h-5 w-5 flex-shrink-0 text-accent" />
-                        <span className="text-sm font-medium text-foreground/90 flex-1 truncate" title={doc.name}>{doc.name}</span>
+                    <li key={doc.id}>
+                       <a 
+                            href={doc.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className={cn(
+                                "flex items-center gap-3 p-2 rounded-md border transition-colors",
+                                doc.url ? "hover:bg-muted/50" : "cursor-not-allowed opacity-60"
+                            )}
+                            onClick={(e) => !doc.url && e.preventDefault()}
+                            title={doc.url ? `View ${doc.name}` : `${doc.name} (Preview not available)`}
+                        >
+                            <FileText className="h-5 w-5 flex-shrink-0 text-accent" />
+                            <span className="text-sm font-medium text-foreground/90 flex-1 truncate">{doc.name}</span>
+                            {doc.url && <ExternalLink className="h-4 w-4 text-muted-foreground" />}
+                        </a>
                     </li>
                     ))}
                 </ul>

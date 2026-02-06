@@ -1,4 +1,4 @@
-import { adminDb } from './firebase-admin';
+import { adminDb, adminStorage } from './firebase-admin';
 import type { Listing, Evidence, ListingStatus, BadgeValue, ListingImage } from './types';
 import { cache } from 'react';
 import { Timestamp, type FieldValue } from 'firebase-admin/firestore';
@@ -114,7 +114,31 @@ const getEvidenceForListing = async (listingId: string): Promise<Evidence[]> => 
     if (snapshot.empty) {
         return [];
     }
-    return snapshot.docs.map(toEvidence);
+
+    const evidenceList = snapshot.docs.map(toEvidence);
+    
+    const evidenceWithUrls = await Promise.all(evidenceList.map(async (evidenceDoc) => {
+        if (!evidenceDoc.storagePath) {
+            return evidenceDoc;
+        }
+
+        try {
+            const options = {
+                version: 'v4' as const,
+                action: 'read' as const,
+                expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+            };
+
+            const [url] = await adminStorage.bucket().file(evidenceDoc.storagePath).getSignedUrl(options);
+            return { ...evidenceDoc, url };
+
+        } catch (error) {
+            console.error(`Failed to generate signed URL for ${evidenceDoc.storagePath}:`, error);
+            return evidenceDoc; // Return doc without URL on error
+        }
+    }));
+    
+    return evidenceWithUrls;
 }
 
 // The 'cache' function from React is used to memoize data requests.
