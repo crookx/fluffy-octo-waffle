@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Shield, Award, BadgeCheck } from 'lucide-react';
+import { Eye, Shield, Award, BadgeCheck, Inbox } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
@@ -49,6 +49,17 @@ export default async function AdminDashboard() {
           <CardDescription>Review and manage all property listings. {pendingListings.length} listing(s) require your review.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <p className="text-sm text-muted-foreground">
+              Manage listings, review trust badges, and respond to incoming reports and messages.
+            </p>
+            <Button asChild variant="outline">
+              <Link href="/admin/inbox">
+                <Inbox className="mr-2 h-4 w-4" />
+                Reports &amp; Messages
+              </Link>
+            </Button>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>

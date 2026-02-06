@@ -21,13 +21,19 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
           <section>
-            <h2 className="text-xl font-semibold">3. Information Sharing</h2>
+            <h2 className="text-xl font-semibold">3. AI Processing</h2>
+            <p>
+              When you upload listing materials, we may process them with AI systems to generate summaries, suggest trust badges, and identify potential risks. These outputs are advisory and are not used as a sole basis for legal or financial decisions.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold">4. Information Sharing</h2>
             <p>
              We do not share your private information with third parties except as necessary to provide our services (such as with our cloud and AI service providers), to comply with the law, or to protect our rights. Publicly visible information on an approved listing, such as the property details and seller's name, will be accessible to visitors.
             </p>
           </section>
           <section>
-            <h2 className="text-xl font-semibold">4. Data Security</h2>
+            <h2 className="text-xl font-semibold">5. Data Security</h2>
             <p>
              We take reasonable measures to help protect information about you from loss, theft, misuse, and unauthorized access, disclosure, alteration, and destruction.
             </p>

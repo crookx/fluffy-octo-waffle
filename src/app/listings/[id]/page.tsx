@@ -64,6 +64,7 @@ export default async function ListingDetailPage({
   const isOwner = user?.uid === listing.ownerId;
   const isAdmin = user?.role === 'ADMIN';
   const canContact = user && !isOwner;
+  const canViewEvidenceNames = isOwner || isAdmin;
 
 
   if (listing.status !== 'approved' && !isOwner && !isAdmin) {
@@ -95,7 +96,8 @@ export default async function ListingDetailPage({
     landType,
     badge,
     latitude,
-    longitude
+    longitude,
+    isApproximateLocation
   } = listing;
 
   const listingDetails = [
@@ -170,6 +172,11 @@ export default async function ListingDetailPage({
            <Card>
             <CardHeader>
               <CardTitle>Location on Map</CardTitle>
+              {isApproximateLocation && (
+                <CardDescription>
+                  Approximate location based on the seller&apos;s provided area. Verify exact boundaries before purchase.
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent>
               {latitude && longitude ? (
@@ -199,10 +206,15 @@ export default async function ListingDetailPage({
             <CardContent>
               {evidence.length > 0 ? (
                 <ul className="space-y-3">
-                  {evidence.map((doc) => (
+                  {evidence.map((doc, index) => (
                     <li key={doc.id} className="flex items-center gap-3 p-2 rounded-md border">
                       <FileText className="h-5 w-5 flex-shrink-0 text-accent" />
-                      <span className="text-sm font-medium text-foreground/90 truncate" title={doc.name}>{doc.name}</span>
+                      <span
+                        className="text-sm font-medium text-foreground/90 truncate"
+                        title={canViewEvidenceNames ? doc.name : 'Seller-provided document'}
+                      >
+                        {canViewEvidenceNames ? doc.name : `Document ${index + 1}`}
+                      </span>
                     </li>
                   ))}
                 </ul>
