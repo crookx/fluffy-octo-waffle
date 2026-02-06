@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Mail, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
-import { Breadcrumbs } from '@/components/breadcrumbs';
+import { AdminPage } from '../_components/admin-page';
 
 type ContactMessage = {
   id: string;
@@ -36,25 +36,7 @@ const toDate = (timestamp: FirebaseFirestore.Timestamp | undefined) => {
   return timestamp.toDate();
 };
 
-async function checkAdmin() {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('__session')?.value;
-  if (!sessionCookie) return redirect('/login');
-
-  try {
-    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-    if (!userDoc.exists || userDoc.data()?.role !== 'ADMIN') {
-      return redirect('/denied');
-    }
-  } catch (error) {
-    return redirect('/login');
-  }
-}
-
 export default async function AdminInboxPage() {
-  await checkAdmin();
-
   const [contactSnapshot, reportSnapshot] = await Promise.all([
     adminDb.collection('contactMessages').orderBy('createdAt', 'desc').limit(50).get(),
     adminDb.collection('listingReports').orderBy('createdAt', 'desc').limit(50).get(),
@@ -85,13 +67,11 @@ export default async function AdminInboxPage() {
   });
 
   return (
-    <div className="container mx-auto py-12">
-      <div className="mb-8">
-        <Breadcrumbs items={[{ href: '/admin', label: 'Admin Dashboard' }, { href: '/admin/inbox', label: 'Inbox' }]} />
-        <h1 className="text-4xl font-bold tracking-tight">Inbox</h1>
-        <p className="text-muted-foreground">Review user messages and listing reports.</p>
-      </div>
-
+    <AdminPage
+      title="Inbox"
+      description="Review user messages and listing reports."
+      breadcrumbs={[{ href: '/admin', label: 'Dashboard' }, { href: '/admin/inbox', label: 'Inbox' }]}
+    >
       <section className="mb-8">
         <h2 className="text-2xl font-semibold tracking-tight mb-4">Contact Messages</h2>
          {contactMessages.length === 0 ? (
@@ -176,6 +156,6 @@ export default async function AdminInboxPage() {
             </div>
           )}
       </section>
-    </div>
+    </AdminPage>
   );
 }

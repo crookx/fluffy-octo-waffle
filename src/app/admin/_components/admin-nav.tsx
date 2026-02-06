@@ -1,0 +1,129 @@
+'use client';
+
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarMenuBadge,
+} from '@/components/ui/sidebar';
+import {
+  LandPlot,
+  LayoutDashboard,
+  Inbox,
+  LogOut,
+  User,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useAuth } from '@/components/providers';
+import { auth, db } from '@/lib/firebase';
+import { useEffect, useState } from 'react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+
+export function AdminNav() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { userProfile } = useAuth();
+  const [pendingCount, setPendingCount] = useState(0);
+  const [inboxCount, setInboxCount] = useState(0);
+
+  useEffect(() => {
+    if (userProfile?.role !== 'ADMIN') return;
+
+    const listingsQuery = query(collection(db, 'listings'), where('status', '==', 'pending'));
+    const listingsUnsubscribe = onSnapshot(listingsQuery, (snapshot) => {
+      setPendingCount(snapshot.size);
+    });
+
+    const contactQuery = query(collection(db, 'contactMessages'), where('status', '==', 'new'));
+    const reportsQuery = query(collection(db, 'listingReports'), where('status', '==', 'new'));
+    
+    let totalUnread = 0;
+    const contactUnsubscribe = onSnapshot(contactQuery, (snapshot) => {
+        totalUnread = snapshot.size + (totalUnread - (inboxCount - snapshot.size));
+        setInboxCount(totalUnread);
+    });
+     const reportsUnsubscribe = onSnapshot(reportsQuery, (snapshot) => {
+        totalUnread = snapshot.size + (totalUnread - (inboxCount - snapshot.size));
+        setInboxCount(totalUnread);
+    });
+
+
+    return () => {
+      listingsUnsubscribe();
+      contactUnsubscribe();
+      reportsUnsubscribe();
+    };
+  }, [userProfile, inboxCount]);
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    await fetch('/api/auth/session', { method: 'DELETE' });
+    router.push('/');
+    router.refresh();
+  };
+
+  const navItems = [
+    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, badge: pendingCount > 0 ? pendingCount : undefined },
+    { href: '/admin/inbox', label: 'Inbox', icon: Inbox, badge: inboxCount > 0 ? inboxCount : undefined },
+  ];
+
+  return (
+    <>
+      <SidebarHeader>
+        <Link href="/" className="flex items-center gap-2">
+          <LandPlot className="size-6 text-primary" />
+          <h2 className="text-lg font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
+            Kenya Land Trust
+          </h2>
+        </Link>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarMenu>
+          {navItems.map((item) => (
+            <SidebarMenuItem key={item.label}>
+              <Link href={item.href} passHref>
+                <SidebarMenuButton
+                  isActive={pathname === item.href}
+                  tooltip={item.label}
+                >
+                  <item.icon />
+                  <span>{item.label}</span>
+                  {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarContent>
+      <SidebarFooter>
+        <Separator className="my-2" />
+         {userProfile && (
+            <div className="flex items-center gap-2 p-2">
+                <Avatar className="h-8 w-8">
+                    <AvatarImage src={userProfile?.photoURL ?? undefined} alt={userProfile?.displayName ?? ''} />
+                    <AvatarFallback>{userProfile?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
+                    <span className="text-sm font-medium truncate">{userProfile.displayName}</span>
+                    <span className="text-xs text-muted-foreground truncate">{userProfile.email}</span>
+                </div>
+            </div>
+         )}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleLogout} tooltip="Log out">
+              <LogOut />
+              <span>Log out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </>
+  );
+}

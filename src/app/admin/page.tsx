@@ -15,8 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Inbox, List, Clock, CheckCircle, XCircle, Search, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TrustBadge } from '@/components/trust-badge';
-import { Breadcrumbs } from '@/components/breadcrumbs';
-import { useEffect, useState, useTransition, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { Listing, ListingStatus } from '@/lib/types';
 import { getAdminStatsAction, searchListingsAction, bulkUpdateListingStatus } from '../actions';
@@ -40,6 +39,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { AnalyticsChart } from './_components/analytics-chart';
+import { AdminPage } from './_components/admin-page';
 
 
 type Stats = {
@@ -129,7 +129,8 @@ export default function AdminDashboard() {
               description: `${selectedIds.length} listing(s) updated to "${newStatus}".`
           });
           setSelectedIds([]); // Clear selection
-          router.refresh(); // Re-fetches server data and re-renders
+          // Data will be re-fetched by the useEffect hook watching searchParams, but we can trigger a manual refresh too
+          router.refresh(); 
       } catch (error: any) {
           toast({
               variant: 'destructive',
@@ -145,13 +146,11 @@ export default function AdminDashboard() {
   const rowCount = listings.length;
 
   return (
-    <div className="container mx-auto py-12">
-      <div className="mb-8">
-        <Breadcrumbs items={[{ href: '/admin', label: 'Admin Dashboard' }]} />
-        <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Review and manage all property listings.</p>
-      </div>
-
+    <AdminPage
+      title="Dashboard"
+      description="Review and manage all property listings."
+      breadcrumbs={[{ href: '/admin', label: 'Dashboard' }]}
+    >
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -346,6 +345,6 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </AdminPage>
   );
 }

@@ -36,22 +36,8 @@ export function Header() {
   const pathname = usePathname();
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
-  const [pendingCount, setPendingCount] = useState(0);
 
   const isSellerOrAdmin = userProfile?.role === 'SELLER' || userProfile?.role === 'ADMIN';
-
-  useEffect(() => {
-    if (userProfile?.role !== 'ADMIN') return;
-
-    const q = query(collection(db, "listings"), where("status", "==", "pending"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        setPendingCount(snapshot.size);
-    }, (error) => {
-      console.error("Failed to listen for pending listings:", error);
-    });
-
-    return () => unsubscribe();
-  }, [userProfile]);
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -59,10 +45,15 @@ export function Header() {
     router.push('/');
     router.refresh();
   };
+  
+  // Hide header on all admin routes, as they use a dedicated layout
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
 
   const navLinks = [
     { href: '/', label: 'Home' },
-    ...(userProfile?.role === 'ADMIN' ? [{ href: '/admin', label: 'Admin' }] : []),
+    // Admin link is removed, it now lives in the dedicated admin sidebar.
   ];
 
   return (
@@ -87,9 +78,6 @@ export function Header() {
               )}
             >
               {link.label}
-                {link.label === 'Admin' && pendingCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-2 -right-4 h-5 w-5 justify-center p-0">{pendingCount}</Badge>
-              )}
             </Link>
           ))}
         </nav>
@@ -183,8 +171,7 @@ export function Header() {
                             {userProfile.role === 'ADMIN' && (
                                 <SheetClose asChild>
                                     <Link href="/admin" className={cn('text-sm font-medium flex items-center', pathname.startsWith('/admin') ? 'text-foreground' : 'text-muted-foreground')}>
-                                        Admin
-                                        {pendingCount > 0 && <Badge variant="destructive" className="ml-2">{pendingCount}</Badge>}
+                                        Admin Panel
                                     </Link>
                                 </SheetClose>
                             )}
