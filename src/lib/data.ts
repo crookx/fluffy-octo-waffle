@@ -1,5 +1,5 @@
 import { adminDb } from './firebase-admin';
-import type { Listing, Evidence, ListingStatus } from './types';
+import type { Listing, Evidence, ListingStatus, BadgeValue } from './types';
 import { cache } from 'react';
 import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
@@ -75,7 +75,7 @@ export const getListings = async (options: {
   minArea?: number;
   maxArea?: number;
   landType?: string;
-  badge?: string;
+  badges?: BadgeValue[];
   limit?: number;
   startAfter?: string; // a document ID
 } = {}): Promise<{ listings: Listing[], lastVisibleId: string | null }> => {
@@ -83,11 +83,11 @@ export const getListings = async (options: {
     status = 'approved',
     query,
     minPrice = 0,
-    maxPrice,
+    maxPrice = 50000000,
     minArea = 0,
-    maxArea,
+    maxArea = 100,
     landType,
-    badge,
+    badges,
     limit: queryLimit = 12,
     startAfter: startAfterId
   } = options;
@@ -102,29 +102,26 @@ export const getListings = async (options: {
     listingsQuery = listingsQuery.where('landType', '==', landType);
   }
 
-  if (badge) {
-    listingsQuery = listingsQuery.where('badgeSuggestion.badge', '==', badge);
+  if (badges && badges.length > 0) {
+    listingsQuery = listingsQuery.where('badge', 'in', badges);
   }
   
-  // Firestore requires the first orderBy to be on the same field as an inequality filter.
-  // We'll prioritize filtering by price if it's specified.
-  const hasPriceFilter = typeof maxPrice === 'number' && maxPrice < 50000000;
+  const hasPriceFilter = minPrice > 0 || maxPrice < 50000000;
   
   if (hasPriceFilter) {
-    listingsQuery = listingsQuery.where('price', '>=', minPrice);
-    if (maxPrice) {
-        listingsQuery = listingsQuery.where('price', '<=', maxPrice);
-    }
-    listingsQuery = listingsQuery.orderBy('price');
-  } else {
-    // Default sort order when not filtering by price
-    listingsQuery = listingsQuery.orderBy('createdAt', 'desc');
+    listingsQuery = listingsQuery.where('price', '>=', minPrice).where('price', '<=', maxPrice);
   }
 
-  // NOTE: Firestore limitations prevent querying by multiple range filters (e.g., price AND area)
-  // at the same time without creating composite indexes. For this implementation, we filter by
-  // price in the query and will filter by area and query string in memory for flexibility.
-  // For a large-scale app, a dedicated search service like Algolia or Typesense is recommended.
+  const hasAreaFilter = minArea > 0 || maxArea < 100;
+   if (hasAreaFilter) {
+    // Firestore does not support multiple range filters on different fields.
+    // For a production app with this requirement, a composite index would be needed,
+    // or a more advanced search solution like Algolia/Typesense.
+    // Here, we filter area in-memory after fetching.
+  }
+  
+  // Default sort order
+  listingsQuery = listingsQuery.orderBy(hasPriceFilter ? 'price' : 'createdAt', hasPriceFilter ? 'asc' : 'desc');
 
   if (startAfterId) {
     const startAfterDoc = await adminDb.collection('listings').doc(startAfterId).get();
@@ -139,10 +136,10 @@ export const getListings = async (options: {
 
   let listings = snapshot.docs.map(doc => toListing(doc, []));
   
-  // In-memory filtering for area and text query
-  if (query || (typeof maxArea === 'number' && maxArea < 100)) {
+  // In-memory filtering for text query, and area if needed
+  if (query || hasAreaFilter) {
       listings = listings.filter(l => {
-          const isAreaMatch = maxArea && maxArea < 100 ? l.area >= minArea && l.area <= maxArea : true;
+          const isAreaMatch = hasAreaFilter ? l.area >= minArea && l.area <= maxArea : true;
           
           const isQueryMatch = query ? 
               l.county.toLowerCase().includes(query.toLowerCase()) || 

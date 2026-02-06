@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import type { Listing, ListingStatus } from '@/lib/types';
-import { updateListingStatus, getAiSummary, checkSuspiciousPatterns, deleteListing } from '@/app/actions';
+import type { Listing, ListingStatus, BadgeValue } from '@/lib/types';
+import { updateListing, getAiSummary, checkSuspiciousPatterns, deleteListing } from '@/app/actions';
 import { Separator } from '@/components/ui/separator';
-import { Bot, Sparkles, AlertTriangle, FileText, Loader2, Trash2, BadgeCheck, Shield, Award } from 'lucide-react';
+import { Bot, Sparkles, AlertTriangle, FileText, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
@@ -22,6 +22,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TrustBadge } from '@/components/trust-badge';
 
 const statusOptions: { value: ListingStatus; label: string }[] = [
   { value: 'approved', label: 'Approve' },
@@ -29,16 +31,12 @@ const statusOptions: { value: ListingStatus; label: string }[] = [
   { value: 'rejected', label: 'Reject' },
 ];
 
-const badgeIcons = {
-    Gold: <Award className="h-5 w-5 text-yellow-500" />,
-    Silver: <BadgeCheck className="h-5 w-5 text-slate-400" />,
-    Bronze: <Shield className="h-5 w-5 text-amber-700" />,
-    None: <AlertTriangle className="h-5 w-5 text-destructive" />,
-};
+const badgeOptions: BadgeValue[] = ['Gold', 'Silver', 'Bronze', 'None'];
 
 export function AdminActions({ listing }: { listing: Listing }) {
   const router = useRouter();
   const [currentStatus, setCurrentStatus] = useState<ListingStatus>(listing.status);
+  const [currentBadge, setCurrentBadge] = useState<BadgeValue | null>(listing.badge);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
@@ -54,20 +52,20 @@ export function AdminActions({ listing }: { listing: Listing }) {
   const [suspicionResult, setSuspicionResult] = useState<{ isSuspicious: boolean; reason: string } | null>(null);
   const { toast } = useToast();
 
-  const handleSaveStatus = async () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateListingStatus(listing.id, currentStatus);
+      await updateListing(listing.id, { status: currentStatus, badge: currentBadge || 'None' });
       toast({
         title: 'Success',
-        description: 'Listing status has been updated.',
+        description: 'Listing has been updated.',
       });
       router.refresh();
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to update status.',
+        description: 'Failed to update listing.',
       });
     } finally {
       setIsSaving(false);
@@ -135,6 +133,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
     }
   }
 
+  const isChanged = currentStatus !== listing.status || currentBadge !== listing.badge;
 
   return (
     <>
@@ -143,19 +142,42 @@ export function AdminActions({ listing }: { listing: Listing }) {
           <CardTitle>Manage Listing</CardTitle>
           <CardDescription>Approve, reject, or delete this listing.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <RadioGroup value={currentStatus} onValueChange={(value: ListingStatus) => setCurrentStatus(value)}>
-            {statusOptions.map(({ value, label }) => (
-              <div key={value} className="flex items-center space-x-2">
-                <RadioGroupItem value={value} id={`status-${value}`} />
-                <Label htmlFor={`status-${value}`}>{label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
+        <CardContent className="space-y-6">
+          <div>
+            <Label className="font-semibold">Status</Label>
+            <RadioGroup value={currentStatus} onValueChange={(value: ListingStatus) => setCurrentStatus(value)} className="mt-2">
+                {statusOptions.map(({ value, label }) => (
+                <div key={value} className="flex items-center space-x-2">
+                    <RadioGroupItem value={value} id={`status-${value}`} />
+                    <Label htmlFor={`status-${value}`}>{label}</Label>
+                </div>
+                ))}
+            </RadioGroup>
+          </div>
+          <div>
+             <Label className="font-semibold">Trust Badge</Label>
+            <Select
+                value={currentBadge || ''}
+                onValueChange={(value: BadgeValue) => setCurrentBadge(value)}
+            >
+                <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select a badge" />
+                </SelectTrigger>
+                <SelectContent>
+                    {badgeOptions.map((badge) => (
+                        <SelectItem key={badge} value={badge}>
+                            <div className="flex items-center gap-2">
+                                <TrustBadge badge={badge} showTooltip={false} />
+                            </div>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-center gap-2">
-            <Button onClick={handleSaveStatus} disabled={isSaving || currentStatus === listing.status}>
+            <Button onClick={handleSave} disabled={isSaving || !isChanged}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Status
+              Save Changes
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -196,8 +218,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
                 <h4 className="font-semibold mb-2 flex items-center gap-2"><Sparkles className="text-accent h-4 w-4"/>Trust Badge Suggestion</h4>
                 <div className="p-3 rounded-md border bg-secondary/50">
                     <div className="flex items-center gap-2">
-                         {badgeIcons[listing.badgeSuggestion.badge]}
-                        <p className="font-bold text-lg">{listing.badgeSuggestion.badge} Badge</p>
+                         <TrustBadge badge={listing.badgeSuggestion.badge} showTooltip={false} />
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">{listing.badgeSuggestion.reason}</p>
                 </div>

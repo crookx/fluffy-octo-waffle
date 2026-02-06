@@ -1,7 +1,9 @@
 export type ListingStatus = 'pending' | 'approved' | 'rejected';
 
+export type BadgeValue = 'Gold' | 'Silver' | 'Bronze' | 'None';
+
 export type BadgeSuggestion = {
-  badge: 'Gold' | 'Silver' | 'Bronze' | 'None';
+  badge: BadgeValue;
   reason: string;
 };
 
@@ -47,6 +49,7 @@ export type Listing = {
   adminReviewedAt?: any; // Firestore timestamp, optional
   imageAnalysis?: ImageAnalysis;
   badgeSuggestion?: BadgeSuggestion;
+  badge: BadgeValue | null;
 };
 
 export type UserProfile = {

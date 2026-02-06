@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
-import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing } from '@/lib/types';
+import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing, BadgeValue } from '@/lib/types';
 import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
 import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -37,7 +37,7 @@ export async function searchListingsAction(options: {
     minArea?: number;
     maxArea?: number;
     landType?: string;
-    badge?: string;
+    badges?: BadgeValue[];
     limit?: number;
     startAfter?: string;
 }): Promise<{ listings: Listing[]; lastVisibleId: string | null }> {
@@ -172,6 +172,7 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
     status: 'pending' as ListingStatus,
     image: mainImageUrl,
     imageHint: 'custom upload',
+    badge: null,
     seller: {
         name: userRecord.displayName || 'Anonymous Seller',
         avatarUrl: userRecord.photoURL || `https://i.pravatar.cc/150?u=${authUser.uid}`
@@ -191,19 +192,26 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
 }
 
 
-// Action to update a listing's status
-export async function updateListingStatus(listingId: string, status: ListingStatus) {
+// Action to update a listing's status and/or badge
+export async function updateListing(listingId: string, data: { status?: ListingStatus; badge?: BadgeValue }) {
   const authUser = await getAuthenticatedUser();
   if (authUser?.role !== 'ADMIN') {
     throw new Error('Authorization required: Only admins can update status.');
   }
 
   const listingRef = adminDb.collection('listings').doc(listingId);
-  await listingRef.update({ 
-      status,
-      updatedAt: FieldValue.serverTimestamp(),
-      adminReviewedAt: FieldValue.serverTimestamp(),
-  });
+
+  const updateData: Record<string, any> = {
+    ...data,
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  // Only set adminReviewedAt if status is changing
+  if (data.status) {
+    updateData.adminReviewedAt = FieldValue.serverTimestamp();
+  }
+
+  await listingRef.update(updateData);
 
   revalidatePath('/admin');
   revalidatePath(`/admin/listings/${listingId}`);

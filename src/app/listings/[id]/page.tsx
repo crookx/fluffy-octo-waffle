@@ -13,9 +13,6 @@ import {
 import { Separator } from '@/components/ui/separator';
 import {
   FileText,
-  ShieldCheck,
-  ShieldAlert,
-  ShieldQuestion,
   EyeOff,
   MapPin,
   Mountain,
@@ -26,6 +23,7 @@ import {
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import type { UserProfile } from '@/lib/types';
+import { TrustBadge } from '@/components/trust-badge';
 
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
@@ -90,6 +88,7 @@ export default async function ListingDetailPage({
     area,
     size,
     landType,
+    badge,
   } = listing;
 
   const listingDetails = [
@@ -106,7 +105,7 @@ export default async function ListingDetailPage({
         {/* Main Content */}
         <div className="md:col-span-2">
           <Card className="overflow-hidden">
-            <CardHeader className="p-0">
+            <CardHeader className="p-0 relative">
               <Image
                 src={image}
                 alt={title}
@@ -116,6 +115,10 @@ export default async function ListingDetailPage({
                 data-ai-hint={imageHint}
                 priority
               />
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                {badge && <TrustBadge badge={badge} />}
+                <StatusBadge status={status} />
+              </div>
             </CardHeader>
             <CardContent className="p-6">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
@@ -124,7 +127,6 @@ export default async function ListingDetailPage({
                     {title}
                   </h1>
                 </div>
-                <StatusBadge status={status} className="text-base px-4 py-2" />
               </div>
 
                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-2 my-6 text-sm text-foreground/90">

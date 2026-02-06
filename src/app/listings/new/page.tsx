@@ -17,12 +17,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { createListing, generateDescriptionAction } from '@/app/actions';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { ToastAction } from '@/components/ui/toast';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
@@ -43,6 +44,7 @@ export default function NewListingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [bulletPoints, setBulletPoints] = useState('');
+  const [generatedDescription, setGeneratedDescription] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -65,14 +67,22 @@ export default function NewListingPage() {
         return;
     }
     setIsGenerating(true);
+    setGeneratedDescription('');
     try {
         const result = await generateDescriptionAction(bulletPoints);
-        form.setValue('description', result.description, { shouldValidate: true });
-        toast({ title: 'Description generated!', description: 'You can now edit the description below.' });
+        setGeneratedDescription(result.description);
+        toast({ title: 'Description generated!', description: 'You can now use or edit the description below.' });
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'AI Error', description: e.message });
     } finally {
         setIsGenerating(false);
+    }
+  }
+
+  const useGeneratedDescription = () => {
+    if (generatedDescription) {
+        form.setValue('description', generatedDescription, { shouldValidate: true });
+        setGeneratedDescription('');
     }
   }
 
@@ -111,6 +121,7 @@ export default function NewListingPage() {
       toast({
         title: 'Listing Submitted!',
         description: 'Your property is now pending review by our team.',
+        action: <ToastAction altText="View" onClick={() => router.push(`/listings/${id}`)}>View</ToastAction>
       });
 
       setTimeout(() => {
@@ -243,6 +254,19 @@ export default function NewListingPage() {
                     {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     Generate Description
                  </Button>
+                 {generatedDescription && (
+                    <Card className="bg-secondary/50">
+                        <CardHeader>
+                            <CardTitle className="text-lg">AI Generated Description</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-secondary-foreground">{generatedDescription}</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="button" size="sm" onClick={useGeneratedDescription}>Use this description</Button>
+                        </CardFooter>
+                    </Card>
+                 )}
               </div>
 
               {/* Description */}
