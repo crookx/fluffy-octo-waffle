@@ -130,7 +130,7 @@ export function Header() {
                   <Button variant="ghost" asChild>
                     <Link href="/login">Log in</Link>
                   </Button>
-                  <Button asChild>
+                  <Button variant="accent" asChild>
                     <Link href="/signup">Sign Up</Link>
                   </Button>
                 </>
