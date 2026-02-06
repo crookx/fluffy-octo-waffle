@@ -10,13 +10,6 @@ import {
   CardTitle,
   CardDescription
 } from '@/components/ui/card';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { Separator } from '@/components/ui/separator';
 import {
   FileText,
@@ -39,6 +32,11 @@ import { BuyerTip } from '@/components/buyer-tip';
 const LocationMap = dynamic(() => import('@/components/location-map'), { 
   ssr: false, 
   loading: () => <Skeleton className="h-[400px] w-full" />
+});
+
+const ListingCarousel = dynamic(() => import('@/components/listing-carousel').then(mod => mod.ListingCarousel), {
+    ssr: false,
+    loading: () => <Skeleton className="aspect-video w-full" />
 });
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
@@ -124,25 +122,7 @@ export default async function ListingDetailPage({
         <div className="md:col-span-2 space-y-8">
           <Card className="overflow-hidden">
             <CardHeader className="p-0 relative">
-               <Carousel className="w-full">
-                <CarouselContent>
-                  {images.map((image, index) => (
-                    <CarouselItem key={index}>
-                      <Image
-                        src={image.url}
-                        alt={`${title} - image ${index + 1}`}
-                        width={1200}
-                        height={800}
-                        className="aspect-video w-full object-cover"
-                        data-ai-hint={image.hint}
-                        priority={index === 0}
-                      />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="absolute left-4" />
-                <CarouselNext className="absolute right-4" />
-              </Carousel>
+               <ListingCarousel images={images} title={title} className="w-full" />
               <div className="absolute top-3 right-3 flex items-center gap-2">
                 {badge && <TrustBadge badge={badge} />}
                 <StatusBadge status={status} />

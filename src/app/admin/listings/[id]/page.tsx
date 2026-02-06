@@ -2,19 +2,14 @@ import { notFound, redirect } from 'next/navigation';
 import Image from 'next/image';
 import { getListingById } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { Separator } from '@/components/ui/separator';
 import { FileText, AlertTriangle } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { AdminActions } from './_components/admin-actions';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
 
 async function checkAdmin() {
   const sessionCookie = cookies().get('__session')?.value;
@@ -30,6 +25,12 @@ async function checkAdmin() {
     return redirect('/login');
   }
 }
+
+const ListingCarousel = dynamic(() => import('@/components/listing-carousel').then(mod => mod.ListingCarousel), {
+    ssr: false,
+    loading: () => <Skeleton className="aspect-video w-full rounded-t-lg" />
+});
+
 
 export default async function AdminReviewPage({ params }: { params: { id: string } }) {
   await checkAdmin();
@@ -53,25 +54,7 @@ export default async function AdminReviewPage({ params }: { params: { id: string
         <div className="md:col-span-2 space-y-6">
             <Card>
                  <CardHeader className="p-0 relative">
-                    <Carousel className="w-full rounded-t-lg overflow-hidden">
-                      <CarouselContent>
-                        {listing.images.map((image, index) => (
-                          <CarouselItem key={index}>
-                            <Image
-                              src={image.url}
-                              alt={`${listing.title} - image ${index + 1}`}
-                              width={1200}
-                              height={800}
-                              className="aspect-video w-full object-cover"
-                              data-ai-hint={image.hint}
-                              priority={index === 0}
-                            />
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                      <CarouselPrevious className="absolute left-4" />
-                      <CarouselNext className="absolute right-4" />
-                    </Carousel>
+                    <ListingCarousel images={listing.images} title={listing.title} className="w-full rounded-t-lg overflow-hidden" />
                     {isImageSuspicious && (
                         <div className="absolute top-3 left-3 bg-destructive/80 text-destructive-foreground p-2 rounded-md flex items-center gap-2 text-sm">
                             <AlertTriangle className="h-5 w-5" />

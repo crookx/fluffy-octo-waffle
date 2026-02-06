@@ -8,12 +8,13 @@ import type { Message, Conversation } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, AlertTriangle } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function ConversationPage({ params }: { params: { id: string } }) {
     const { user } = useAuth();
@@ -128,6 +129,14 @@ export default function ConversationPage({ params }: { params: { id: string } })
                 </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
+                <Alert variant="default" className="border-warning/50 bg-warning/10 text-warning [&>svg]:text-warning">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle className="text-warning font-bold">Safety Tip</AlertTitle>
+                    <AlertDescription className="text-warning/90">
+                        For your safety, never share personal financial details (like bank accounts) or make payments outside of the platform. Report any suspicious requests.
+                    </AlertDescription>
+                </Alert>
+
                 {messages.map(msg => {
                     const isSender = msg.senderId === user?.uid;
                     const participant = isSender ? null : (conversation.participants[msg.senderId] || null);
