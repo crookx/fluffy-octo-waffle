@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get('__session')?.value;
+  const sessionCookie = await cookies().get('__session')?.value;
   
   // These are public pages, but if a user is logged in, we don't want them to see it.
   const authPages = ['/login', '/signup'];
@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // All pages that require a user to be logged in
-  const protectedPages = ['/admin', '/dashboard', '/listings/new', '/messages', '/profile'];
+  const protectedPages = ['/admin', '/dashboard', '/listings/new', '/messages', '/profile', '/favorites'];
   let isProtectedRoute = protectedPages.some(p => pathname.startsWith(p));
 
   // Regex to match /listings/{any-id}/edit

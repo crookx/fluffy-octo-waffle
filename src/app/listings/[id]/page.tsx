@@ -31,6 +31,7 @@ import { DynamicLocationMap } from '@/components/dynamic-location-map';
 import { DynamicListingCarousel } from '@/components/dynamic-listing-carousel';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
+import { FavoriteButton } from '@/components/favorite-button';
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const cookieStore = await cookies();
@@ -85,6 +86,7 @@ export default async function ListingDetailPage({
   }
 
   const {
+    id,
     title,
     location,
     county,
@@ -130,6 +132,9 @@ export default async function ListingDetailPage({
           <Card className="overflow-hidden">
             <CardHeader className="p-0 relative">
                <DynamicListingCarousel images={images} title={title} className="w-full" />
+              <div className="absolute top-3 left-3 z-10">
+                <FavoriteButton listingId={id} />
+              </div>
               <div className="absolute top-3 right-3 flex items-center gap-2">
                 {badge && <TrustBadge badge={badge} />}
                 <StatusBadge status={status} />

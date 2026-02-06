@@ -47,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { TrustBadge } from '@/components/trust-badge';
+import { FavoriteButton } from '@/components/favorite-button';
 
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
@@ -358,6 +359,9 @@ export default function ListingsPage() {
                       data-ai-hint={listing.images[0]?.hint || 'landscape'}
                     />
                   </Link>
+                  <div className="absolute top-3 left-3 z-10">
+                    <FavoriteButton listingId={listing.id} />
+                  </div>
                   <div className="absolute top-3 right-3 flex items-center gap-2">
                     {listing.badge && <TrustBadge badge={listing.badge} />}
                     <StatusBadge status={listing.status} />

@@ -592,3 +592,14 @@ export async function updateUserProfileAction(formData: FormData) {
   revalidatePath('/profile');
   revalidatePath('/dashboard');
 }
+
+export async function getListingsByIds(ids: string[]): Promise<Listing[]> {
+    if (!ids || ids.length === 0) return [];
+
+    // NOTE: Caching on getListingById should prevent excessive reads for the same listings.
+    const listingPromises = ids.map(id => getListingById(id));
+    const listings = await Promise.all(listingPromises);
+    
+    // Filter out nulls (not found) and non-approved listings
+    return listings.filter((l): l is Listing => l !== null && l.status === 'approved');
+}

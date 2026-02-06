@@ -13,7 +13,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth.uid == userId || isAdmin();
       allow write: if request.auth.uid == userId;
-      // Note: Role changes must be done server-side or by an admin via a trusted flow.
+
+      // Users can manage their own favorites list
+      match /favorites/{listingId} {
+        allow read, write, delete: if request.auth.uid == userId;
+      }
     }
 
     // Listings have granular access control
