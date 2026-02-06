@@ -735,7 +735,7 @@ export async function updateUserProfileAction(formData: FormData) {
   // Update Firestore user profile
   await adminDb.collection('users').doc(authUser.uid).update({
     displayName: displayName,
-    phone: phone || null,
+    phone: phone || FieldValue.delete(),
   });
 
   revalidatePath('/profile');
@@ -752,5 +752,7 @@ export async function getListingsByIds(ids: string[]): Promise<Listing[]> {
     // Filter out nulls (not found) and non-approved listings
     return listings.filter((l): l is Listing => l !== null && l.status === 'approved');
 }
+
+    
 
     
