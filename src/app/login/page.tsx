@@ -75,22 +75,29 @@ export default function LoginPage() {
   
   // Common function to handle successful login flow
   const handleLoginSuccess = async (user: User) => {
+    console.log('handleLoginSuccess: Starting session creation process for user:', user.uid);
     const idToken = await user.getIdToken();
 
     // Set session cookie
+    console.log('handleLoginSuccess: Sending idToken to /api/auth/session');
     const response = await fetch('/api/auth/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),
     });
-
+    
+    console.log('handleLoginSuccess: Received response from /api/auth/session. Status:', response.status);
     if (!response.ok) {
-        throw new Error('Failed to create session. Please try again.');
+        const errorData = await response.json().catch(() => ({ message: 'Could not parse error response from server.' }));
+        console.error('handleLoginSuccess: Session creation failed. Server response:', errorData);
+        throw new Error(errorData.message || 'Failed to create session on the server.');
     }
 
+    console.log('handleLoginSuccess: Session created successfully.');
     toast({ title: 'Login Successful', description: "Welcome back!" });
     
     const redirectUrl = searchParams.get('redirect') || '/dashboard';
+    console.log('handleLoginSuccess: Redirecting to', redirectUrl);
     router.push(redirectUrl);
     router.refresh(); // Important to re-run middleware and server components
   }

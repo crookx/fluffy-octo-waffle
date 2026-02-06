@@ -73,18 +73,27 @@ export default function SignupPage() {
 
   // Common function to handle successful login/signup flow
   const handleAuthSuccess = async (user: User) => {
+    console.log('handleAuthSuccess: Starting session creation for new user:', user.uid);
     const idToken = await user.getIdToken();
+    
+    console.log('handleAuthSuccess: Sending idToken to /api/auth/session');
     const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
     });
 
+    console.log('handleAuthSuccess: Received response from /api/auth/session. Status:', response.status);
     if (!response.ok) {
-        throw new Error('Failed to create session. Please try again.');
+        const errorData = await response.json().catch(() => ({ message: 'Could not parse error response from server.' }));
+        console.error('handleAuthSuccess: Session creation failed. Server response:', errorData);
+        throw new Error(errorData.message || 'Failed to create session on the server.');
     }
 
+    console.log('handleAuthSuccess: Session created successfully.');
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
+    
+    console.log('handleAuthSuccess: Redirecting to /dashboard');
     router.push('/dashboard');
     router.refresh();
   }
