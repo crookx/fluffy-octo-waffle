@@ -1,10 +1,12 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
+import { Eye, Mail, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
 type ContactMessage = {
   id: string;
@@ -83,92 +85,95 @@ export default async function AdminInboxPage() {
 
   return (
     <div className="container mx-auto py-10 space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Contact Messages</CardTitle>
-          <CardDescription>Latest inquiries submitted from the contact form.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {contactMessages.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No contact messages yet.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sender</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Message</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Received</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {contactMessages.map((message) => (
-                  <TableRow key={message.id}>
-                    <TableCell className="font-medium">{message.name}</TableCell>
-                    <TableCell>{message.email}</TableCell>
-                    <TableCell className="max-w-md whitespace-pre-wrap">
-                      {message.message}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={message.status === 'new' ? 'secondary' : 'outline'}>{message.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {message.createdAt ? formatDistanceToNow(message.createdAt, { addSuffix: true }) : 'N/A'}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+       <div>
+        <h1 className="text-3xl font-bold tracking-tight">Inbox</h1>
+        <p className="text-muted-foreground">Review user messages and listing reports.</p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Listing Reports</CardTitle>
-          <CardDescription>Reports submitted by buyers or visitors.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {listingReports.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No listing reports yet.</p>
+      <section>
+        <h2 className="text-2xl font-semibold tracking-tight mb-4">Contact Messages</h2>
+         {contactMessages.length === 0 ? (
+            <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground">No contact messages yet.</p>
+             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Listing ID</TableHead>
-                  <TableHead>Reporter</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Received</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {contactMessages.map((message) => (
+                <Card key={message.id} className="flex flex-col">
+                    <CardHeader>
+                        <div className="flex justify-between items-start gap-4">
+                            <div>
+                                <CardTitle className="text-lg">{message.name}</CardTitle>
+                                <CardDescription>{message.email}</CardDescription>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                                <Badge variant={message.status === 'new' ? 'secondary' : 'outline'}>{message.status}</Badge>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {message.createdAt ? formatDistanceToNow(message.createdAt, { addSuffix: true }) : 'N/A'}
+                                </p>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                        <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                    </CardContent>
+                    <CardFooter className="flex items-center gap-2">
+                        <Button size="sm" variant="outline" disabled>
+                            <Mail className="mr-2 h-4 w-4"/> Reply
+                        </Button>
+                        <Button size="sm" variant="outline" disabled>
+                             <CheckCircle className="mr-2 h-4 w-4"/> Mark Handled
+                        </Button>
+                    </CardFooter>
+                </Card>
+              ))}
+            </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold tracking-tight mb-4">Listing Reports</h2>
+        {listingReports.length === 0 ? (
+            <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground">No listing reports yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {listingReports.map((report) => (
-                  <TableRow key={report.id}>
-                    <TableCell className="font-medium">{report.listingId}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{report.reporter?.displayName || 'Anonymous'}</span>
-                        <span className="text-xs text-muted-foreground">{report.reporter?.email || 'No email'}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-md whitespace-pre-wrap">
-                      {report.reason}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={report.status === 'new' ? 'secondary' : 'outline'}>{report.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {report.createdAt ? formatDistanceToNow(report.createdAt, { addSuffix: true }) : 'N/A'}
-                    </TableCell>
-                  </TableRow>
+                  <Card key={report.id} className="flex flex-col">
+                    <CardHeader>
+                        <div className="flex justify-between items-start gap-4">
+                            <div>
+                                <CardTitle className="text-lg">Report for: {report.listingId}</CardTitle>
+                                <CardDescription>
+                                    By: {report.reporter?.displayName || 'Anonymous'} ({report.reporter?.email || 'No email'})
+                                </CardDescription>
+                            </div>
+                             <div className="text-right flex-shrink-0">
+                                <Badge variant={report.status === 'new' ? 'secondary' : 'outline'}>{report.status}</Badge>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {report.createdAt ? formatDistanceToNow(report.createdAt, { addSuffix: true }) : 'N/A'}
+                                </p>
+                            </div>
+                        </div>
+                    </CardHeader>
+                     <CardContent className="flex-1">
+                        <p className="text-sm font-semibold mb-2">Reason:</p>
+                        <p className="text-sm whitespace-pre-wrap bg-secondary/50 p-3 rounded-md">{report.reason}</p>
+                    </CardContent>
+                    <CardFooter className="flex items-center gap-2">
+                        <Button asChild size="sm" variant="outline">
+                           <Link href={`/admin/listings/${report.listingId}`}><Eye className="mr-2 h-4 w-4"/> View Listing</Link>
+                        </Button>
+                        <Button size="sm" variant="outline" disabled>
+                            <CheckCircle className="mr-2 h-4 w-4"/> Mark Handled
+                        </Button>
+                    </CardFooter>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+            </div>
           )}
-        </CardContent>
-      </Card>
+      </section>
     </div>
   );
 }
