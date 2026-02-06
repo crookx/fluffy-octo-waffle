@@ -11,7 +11,7 @@ import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
 import { generatePropertyDescription } from '@/ai/flows/generate-property-description';
 import { analyzePropertyImage } from '@/ai/flows/analyze-property-image';
 import { suggestTrustBadge } from '@/ai/flows/suggest-trust-badge';
-import { getListings, getListingById, getAdminDashboardStats } from '@/lib/data';
+import { getListings, getListingById, getAdminDashboardStats, getListingStatsByDay } from '@/lib/data';
 
 const generateCoordsFromLocation = (location: string): { latitude: number; longitude: number } => {
     if (!location) return { latitude: 0.0236, longitude: 37.9062 }; // Default to central Kenya
@@ -76,6 +76,16 @@ export async function getAdminStatsAction() {
   }
   return getAdminDashboardStats();
 }
+
+// Action to get chart data
+export async function getChartDataAction() {
+  const authUser = await getAuthenticatedUser();
+  if (authUser?.role !== 'ADMIN') {
+    throw new Error('Authorization required.');
+  }
+  return getListingStatsByDay(30);
+}
+
 
 // Action to generate a property description
 export async function generateDescriptionAction(bulletPoints: string) {

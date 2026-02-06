@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { AnalyticsChart } from './_components/analytics-chart';
 
 
 type Stats = {
@@ -188,6 +189,10 @@ export default function AdminDashboard() {
             {stats ? <div className="text-2xl font-bold">{stats.rejected}</div> : <Skeleton className="h-8 w-16"/>}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mb-8">
+        <AnalyticsChart />
       </div>
 
       <Card>

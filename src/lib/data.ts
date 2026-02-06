@@ -277,6 +277,47 @@ export const getAdminDashboardStats = cache(async () => {
     return stats;
 });
 
+export const getListingStatsByDay = cache(async (days = 30): Promise<{ date: string; count: number }[]> => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - days);
+
+    const snapshot = await adminDb.collection('listings')
+        .where('status', '==', 'approved')
+        .where('adminReviewedAt', '>=', startDate)
+        .where('adminReviewedAt', '<=', endDate)
+        .orderBy('adminReviewedAt')
+        .get();
+
+    const statsByDay: { [key: string]: number } = {};
+
+    snapshot.forEach(doc => {
+        const reviewedAt = toDate(doc.data().adminReviewedAt);
+        if (reviewedAt) {
+            const day = reviewedAt.toISOString().split('T')[0]; // YYYY-MM-DD
+            if (!statsByDay[day]) {
+                statsByDay[day] = 0;
+            }
+            statsByDay[day]++;
+        }
+    });
+
+    // Fill in missing days with 0 counts
+    const result = [];
+    for (let i = 0; i < days; i++) {
+        const d = new Date();
+        d.setDate(endDate.getDate() - i);
+        const dayString = d.toISOString().split('T')[0];
+        result.push({
+            date: dayString,
+            count: statsByDay[dayString] || 0,
+        });
+    }
+
+    // Return sorted by date ascending
+    return result.reverse();
+});
+
 
 export const getListingById = cache(async (id: string): Promise<Listing | null> => {
   const docRef = adminDb.collection('listings').doc(id);
