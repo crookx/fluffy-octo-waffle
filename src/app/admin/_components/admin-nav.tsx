@@ -43,23 +43,25 @@ export function AdminNav() {
     const contactQuery = query(collection(db, 'contactMessages'), where('status', '==', 'new'));
     const reportsQuery = query(collection(db, 'listingReports'), where('status', '==', 'new'));
     
-    let totalUnread = 0;
+    let contactCount = 0;
+    let reportCount = 0;
+
     const contactUnsubscribe = onSnapshot(contactQuery, (snapshot) => {
-        totalUnread = snapshot.size + (totalUnread - (inboxCount - snapshot.size));
-        setInboxCount(totalUnread);
-    });
-     const reportsUnsubscribe = onSnapshot(reportsQuery, (snapshot) => {
-        totalUnread = snapshot.size + (totalUnread - (inboxCount - snapshot.size));
-        setInboxCount(totalUnread);
+        contactCount = snapshot.size;
+        setInboxCount(contactCount + reportCount);
     });
 
+    const reportsUnsubscribe = onSnapshot(reportsQuery, (snapshot) => {
+        reportCount = snapshot.size;
+        setInboxCount(contactCount + reportCount);
+    });
 
     return () => {
       listingsUnsubscribe();
       contactUnsubscribe();
       reportsUnsubscribe();
     };
-  }, [userProfile, inboxCount]);
+  }, [userProfile]);
 
   const handleLogout = async () => {
     await auth.signOut();
