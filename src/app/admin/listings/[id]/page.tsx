@@ -40,8 +40,8 @@ export default async function AdminReviewPage({ params }: { params: { id: string
   return (
     <div className="container mx-auto max-w-7xl py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Admin Review</h1>
-        <p className="text-muted-foreground">Listing ID: {listing.id}</p>
+        <h1 className="text-4xl font-bold tracking-tight">Admin Review</h1>
+        <p className="text-muted-foreground">Listing ID: <code className="text-sm font-mono bg-muted px-1 py-0.5 rounded">{listing.id}</code></p>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

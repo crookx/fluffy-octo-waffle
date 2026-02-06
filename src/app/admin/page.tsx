@@ -45,7 +45,7 @@ export default async function AdminDashboard() {
   return (
     <div className="container mx-auto py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
         <p className="text-muted-foreground">Review and manage all property listings. {pendingListings.length} listing(s) require your review.</p>
       </div>
 
@@ -77,7 +77,7 @@ export default async function AdminDashboard() {
               <TableBody>
                 {[...pendingListings, ...otherListings].map((listing) => (
                   <TableRow key={listing.id} className={cn(listing.status === 'pending' && 'bg-warning/10 hover:bg-warning/20')}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-semibold">
                         <div className="flex flex-col">
                           <span className="font-semibold">{listing.title}</span>
                           <span className="text-xs text-muted-foreground">{listing.location}</span>

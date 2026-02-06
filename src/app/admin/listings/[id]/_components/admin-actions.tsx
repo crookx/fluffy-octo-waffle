@@ -234,14 +234,14 @@ export function AdminActions({ listing }: { listing: Listing }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bot /> AI Assistant & Insights
+            <Bot className="h-6 w-6 text-accent" /> AI Assistant & Insights
           </CardTitle>
           <CardDescription>GenAI tools to accelerate your review process.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
            {listing.badgeSuggestion && (
             <div>
-                <h4 className="font-semibold mb-2 flex items-center gap-2"><Sparkles className="text-accent h-4 w-4"/>Trust Badge Suggestion</h4>
+                <h4 className="font-semibold mb-2 flex items-center gap-2"><Sparkles className="text-accent h-5 w-5"/>Trust Badge Suggestion</h4>
                 <div className="p-3 rounded-md border bg-secondary/50">
                     <div className="flex items-center gap-2">
                          <TrustBadge badge={listing.badgeSuggestion.badge} showTooltip={false} />
@@ -252,7 +252,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
            )}
            {listing.imageAnalysis?.isSuspicious && (
             <div>
-                 <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="text-warning h-4 w-4"/>Image Analysis</h4>
+                 <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="text-warning h-5 w-5"/>Image Analysis</h4>
                  <div className="p-3 rounded-md border border-destructive/50 bg-destructive/10">
                     <p className="font-bold text-destructive">Result: Suspicious Image</p>
                     <p className="text-sm text-muted-foreground mt-1">{listing.imageAnalysis.reason}</p>

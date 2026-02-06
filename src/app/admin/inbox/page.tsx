@@ -86,7 +86,7 @@ export default async function AdminInboxPage() {
   return (
     <div className="container mx-auto py-12 space-y-8">
        <div>
-        <h1 className="text-3xl font-bold tracking-tight">Inbox</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Inbox</h1>
         <p className="text-muted-foreground">Review user messages and listing reports.</p>
       </div>
 
