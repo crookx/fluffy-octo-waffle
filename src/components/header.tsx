@@ -126,14 +126,6 @@ export function Header() {
             <>
               {user && userProfile ? (
                 <>
-                  {isSellerOrAdmin && (
-                    <Button asChild className="hidden md:inline-flex">
-                      <Link href="/listings/new">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        New Listing
-                      </Link>
-                    </Button>
-                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-8 w-8 rounded-full" aria-label="Open user menu">
@@ -163,6 +155,11 @@ export function Header() {
                           <DropdownMenuItem asChild>
                                <Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Link>
                           </DropdownMenuItem>
+                        )}
+                        {isSellerOrAdmin && (
+                            <DropdownMenuItem asChild>
+                                <Link href="/listings/new"><PlusCircle className="mr-2 h-4 w-4" />New Listing</Link>
+                            </DropdownMenuItem>
                         )}
                         <DropdownMenuItem asChild>
                              <Link href="/favorites"><Heart className="mr-2 h-4 w-4" />Favorites</Link>
