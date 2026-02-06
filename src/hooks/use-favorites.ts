@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/providers';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export function useFavorites() {
     const { user } = useAuth();
@@ -25,34 +27,49 @@ export function useFavorites() {
             });
             setFavoriteIds(ids);
             setLoading(false);
-        }, (error) => {
-            console.error("Error fetching favorites: ", error);
+        }, async (error) => {
+            const permissionError = new FirestorePermissionError({
+                path: `users/${user.uid}/favorites`,
+                operation: 'list',
+            }, error);
+            errorEmitter.emit('permission-error', permissionError);
             setLoading(false);
         });
 
         return () => unsubscribe();
     }, [user]);
 
-    const addFavorite = useCallback(async (listingId: string) => {
+    const addFavorite = useCallback((listingId: string) => {
         if (!user) return;
-        try {
-            const favDocRef = doc(db, 'users', user.uid, 'favorites', listingId);
-            await setDoc(favDocRef, {
-                createdAt: serverTimestamp()
+        const favDocRef = doc(db, 'users', user.uid, 'favorites', listingId);
+        const favoriteData = {
+            createdAt: serverTimestamp()
+        };
+        
+        setDoc(favDocRef, favoriteData)
+            .catch(async (error) => {
+                const permissionError = new FirestorePermissionError({
+                    path: favDocRef.path,
+                    operation: 'create',
+                    requestResourceData: favoriteData
+                }, error);
+                errorEmitter.emit('permission-error', permissionError);
             });
-        } catch (error) {
-            console.error("Error adding favorite: ", error);
-        }
+
     }, [user]);
 
-    const removeFavorite = useCallback(async (listingId: string) => {
+    const removeFavorite = useCallback((listingId: string) => {
         if (!user) return;
-        try {
-            const favDocRef = doc(db, 'users', user.uid, 'favorites', listingId);
-            await deleteDoc(favDocRef);
-        } catch (error) {
-            console.error("Error removing favorite: ", error);
-        }
+        const favDocRef = doc(db, 'users', user.uid, 'favorites', listingId);
+
+        deleteDoc(favDocRef)
+            .catch(async (error) => {
+                const permissionError = new FirestorePermissionError({
+                    path: favDocRef.path,
+                    operation: 'delete',
+                }, error);
+                errorEmitter.emit('permission-error', permissionError);
+            });
     }, [user]);
 
     const isFavorite = (listingId: string) => favoriteIds.has(listingId);

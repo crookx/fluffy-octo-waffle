@@ -5,6 +5,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserProfile } from '@/lib/types';
 import { usePathname } from 'next/navigation';
+import { FirebaseErrorListener } from './FirebaseErrorListener';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -45,7 +46,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserProfile(null);
         }
         setLoading(false);
-      }, () => {
+      }, (error) => {
+        // This specific listener is critical. A permissions error here means the user
+        // cannot even read their own profile, which is a fundamental problem.
+        // We log it verbosely but avoid throwing a contextual error that might
+        // put the entire UI into an unrecoverable error state.
+        console.error(`Critical Error: Could not read user profile for ${user.uid}. Check Firestore security rules for the /users/{userId} path.`, error);
         setUserProfile(null);
         setLoading(false);
       });
@@ -65,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>
+      {process.env.NODE_ENV === 'development' && <FirebaseErrorListener />}
       {children}
     </AuthContext.Provider>
   );

@@ -10,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export function ConversationsList() {
     const { user, loading: authLoading } = useAuth();
@@ -34,8 +36,12 @@ export function ConversationsList() {
             } as Conversation));
             setConversations(convos);
             setLoading(false);
-        }, (error) => {
-            console.error("Error fetching conversations:", error);
+        }, async (error) => {
+            const permissionError = new FirestorePermissionError({
+                path: 'conversations',
+                operation: 'list',
+            }, error);
+            errorEmitter.emit('permission-error', permissionError);
             setLoading(false);
         });
 

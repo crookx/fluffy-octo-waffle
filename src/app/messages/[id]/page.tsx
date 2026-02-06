@@ -17,6 +17,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 const ChatSkeleton = () => (
     <Card className="h-full flex flex-col">
@@ -65,7 +67,6 @@ export default function ConversationPage({ params }: { params: { id: string } })
     const { toast } = useToast();
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
-    const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -91,9 +92,17 @@ export default function ConversationPage({ params }: { params: { id: string } })
             } else {
                 setConversation(null);
             }
+        }, async (error) => {
+            const permissionError = new FirestorePermissionError({
+                path: convoRef.path,
+                operation: 'get',
+            }, error);
+            errorEmitter.emit('permission-error', permissionError);
+            setLoading(false);
         });
 
-        const messagesQuery = query(collection(db, 'conversations', params.id, 'messages'), orderBy('timestamp', 'asc'));
+        const messagesColRef = collection(db, 'conversations', params.id, 'messages');
+        const messagesQuery = query(messagesColRef, orderBy('timestamp', 'asc'));
         const messagesUnsubscribe = onSnapshot(messagesQuery, (snapshot) => {
             const msgs = snapshot.docs.map(doc => ({
                 id: doc.id,
@@ -101,7 +110,12 @@ export default function ConversationPage({ params }: { params: { id: string } })
             } as Message));
             setMessages(msgs);
             setLoading(false);
-        }, () => {
+        }, async (error) => {
+            const permissionError = new FirestorePermissionError({
+                path: messagesColRef.path,
+                operation: 'list',
+            }, error);
+            errorEmitter.emit('permission-error', permissionError);
             setLoading(false);
         });
 
@@ -111,7 +125,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
         };
     }, [params.id, user]);
 
-    const handleSendMessage = async (e: React.FormEvent) => {
+    const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !user || !conversation) return;
 
@@ -119,30 +133,48 @@ export default function ConversationPage({ params }: { params: { id: string } })
         const text = newMessage;
         setNewMessage('');
         
-        try {
-            const messagesColRef = collection(db, 'conversations', params.id, 'messages');
-            await addDoc(messagesColRef, {
-                senderId: user.uid,
-                text: text,
-                timestamp: serverTimestamp(),
-            });
+        const messagesColRef = collection(db, 'conversations', params.id, 'messages');
+        const messageData = {
+            senderId: user.uid,
+            text: text,
+            timestamp: serverTimestamp(),
+        };
 
-            const convoRef = doc(db, 'conversations', params.id);
-            await updateDoc(convoRef, {
-                lastMessage: {
-                    text: text,
-                    senderId: user.uid,
-                    timestamp: serverTimestamp(), // Use server timestamp for consistency
-                },
-                updatedAt: serverTimestamp(),
-            });
-        } catch (error) {
-            console.error("Error sending message: ", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not send message.' });
-            setNewMessage(text); // Put message back in input
-        } finally {
-            setSending(false);
-        }
+        // Use a non-blocking write with a .catch handler for errors.
+        addDoc(messagesColRef, messageData).catch(async (error) => {
+            const permissionError = new FirestorePermissionError({
+                path: messagesColRef.path,
+                operation: 'create',
+                requestResourceData: messageData,
+            }, error);
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not send message. Permission denied.' });
+            setNewMessage(text); // Restore the message text
+        });
+
+        const convoRef = doc(db, 'conversations', params.id);
+        const convoData = {
+            lastMessage: {
+                text: text,
+                senderId: user.uid,
+                timestamp: serverTimestamp(),
+            },
+            updatedAt: serverTimestamp(),
+        };
+
+        // Also handle errors for updating the conversation document
+        updateDoc(convoRef, convoData).catch(async (error) => {
+            const permissionError = new FirestorePermissionError({
+                path: convoRef.path,
+                operation: 'update',
+                requestResourceData: convoData,
+            }, error);
+            errorEmitter.emit('permission-error', permissionError);
+            // Don't show a second toast, one is enough.
+        });
+        
+        // UI updates immediately, don't wait for the write to complete.
+        setSending(false);
     };
 
     if (loading) {

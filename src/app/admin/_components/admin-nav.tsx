@@ -24,6 +24,8 @@ import { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export function AdminNav() {
   const pathname = usePathname();
@@ -38,6 +40,13 @@ export function AdminNav() {
     const listingsQuery = query(collection(db, 'listings'), where('status', '==', 'pending'));
     const listingsUnsubscribe = onSnapshot(listingsQuery, (snapshot) => {
       setPendingCount(snapshot.size);
+    },
+    async (error) => {
+        const permissionError = new FirestorePermissionError({
+            path: '/listings',
+            operation: 'list',
+        }, error);
+        errorEmitter.emit('permission-error', permissionError);
     });
 
     const contactQuery = query(collection(db, 'contactMessages'), where('status', '==', 'new'));
@@ -49,11 +58,23 @@ export function AdminNav() {
     const contactUnsubscribe = onSnapshot(contactQuery, (snapshot) => {
         contactCount = snapshot.size;
         setInboxCount(contactCount + reportCount);
+    }, async (error) => {
+        const permissionError = new FirestorePermissionError({
+            path: '/contactMessages',
+            operation: 'list',
+        }, error);
+        errorEmitter.emit('permission-error', permissionError);
     });
 
     const reportsUnsubscribe = onSnapshot(reportsQuery, (snapshot) => {
         reportCount = snapshot.size;
         setInboxCount(contactCount + reportCount);
+    }, async (error) => {
+        const permissionError = new FirestorePermissionError({
+            path: '/listingReports',
+            operation: 'list',
+        }, error);
+        errorEmitter.emit('permission-error', permissionError);
     });
 
     return () => {
