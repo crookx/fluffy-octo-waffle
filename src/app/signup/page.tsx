@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -61,7 +60,6 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
 
 
 export default function SignupPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -95,8 +93,7 @@ export default function SignupPage() {
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
     console.log('handleAuthSuccess: Redirecting to /dashboard');
-    router.push('/dashboard');
-    router.refresh();
+    window.location.href = '/dashboard';
   }
 
 
@@ -138,7 +135,6 @@ export default function SignupPage() {
         title: 'Sign Up Failed',
         description: message,
       });
-    } finally {
       setIsSubmitting(false);
     }
   }
@@ -182,7 +178,6 @@ export default function SignupPage() {
             title: 'Sign Up Failed',
             description: message,
         });
-    } finally {
         setIsGoogleSubmitting(false);
     }
   }

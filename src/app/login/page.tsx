@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -62,7 +62,6 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,8 +98,7 @@ export default function LoginPage() {
     
     const redirectUrl = searchParams.get('redirect') || '/dashboard';
     console.log('handleLoginSuccess: Redirecting to', redirectUrl);
-    router.push(redirectUrl);
-    router.refresh(); // Important to re-run middleware and server components
+    window.location.href = redirectUrl;
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -118,7 +116,6 @@ export default function LoginPage() {
         title: 'Login Failed',
         description: message,
       });
-    } finally {
       setIsSubmitting(false);
     }
   }
@@ -162,7 +159,6 @@ export default function LoginPage() {
             title: 'Sign In Failed',
             description: message,
         });
-    } finally {
         setIsGoogleSubmitting(false);
     }
   }
