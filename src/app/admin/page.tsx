@@ -119,28 +119,37 @@ export default function AdminDashboard() {
       );
   };
 
-  const handleBulkUpdate = async (newStatus: ListingStatus) => {
+    const handleBulkUpdate = async (newStatus: ListingStatus) => {
       if (selectedIds.length === 0) return;
       setIsBulkUpdating(true);
       try {
-          await bulkUpdateListingStatus(selectedIds, newStatus);
-          toast({
-              title: "Bulk Update Successful",
-              description: `${selectedIds.length} listing(s) updated to "${newStatus}".`
-          });
-          setSelectedIds([]); // Clear selection
-          // Data will be re-fetched by the useEffect hook watching searchParams, but we can trigger a manual refresh too
-          router.refresh(); 
+        const resp = await fetch('/api/admin/bulk-update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingIds: selectedIds, status: newStatus }),
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || data.status !== 'success') {
+          throw new Error(data.message || 'Bulk update failed');
+        }
+
+        toast({
+          title: "Bulk Update Successful",
+          description: `${selectedIds.length} listing(s) updated to "${newStatus}".`
+        });
+        setSelectedIds([]);
+        router.refresh();
       } catch (error: any) {
-          toast({
-              variant: 'destructive',
-              title: 'Bulk Update Failed',
-              description: error.message,
-          });
+        toast({
+          variant: 'destructive',
+          title: 'Bulk Update Failed',
+          description: error.message,
+        });
       } finally {
-          setIsBulkUpdating(false);
+        setIsBulkUpdating(false);
       }
-  };
+    };
 
   const numSelected = selectedIds.length;
   const rowCount = listings.length;

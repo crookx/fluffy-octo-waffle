@@ -18,7 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createListing, generateDescriptionAction } from '@/app/actions';
+// Using server-side API routes instead of Client -> Server Action RPCs
+// to avoid UnrecognizedActionError when server actions change during HMR.
 import { Loader2, Sparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
@@ -71,23 +72,32 @@ export default function NewListingPage() {
     },
   });
 
-  const handleGenerateDescription = async () => {
+    const handleGenerateDescription = async () => {
     if (!bulletPoints) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Please provide some key features.' });
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'Please provide some key features.' });
+      return;
     }
     setIsGenerating(true);
     setGeneratedDescription('');
     try {
-        const result = await generateDescriptionAction(bulletPoints);
-        setGeneratedDescription(result.description);
-        toast({ title: 'Description generated!', description: 'You can now use or edit the description below.' });
+      const res = await fetch('/api/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bulletPoints }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(err?.error || 'Failed to generate description');
+      }
+      const data = await res.json();
+      setGeneratedDescription(data.description || data.result?.description || '');
+      toast({ title: 'Description generated!', description: 'You can now use or edit the description below.' });
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'AI Error', description: e.message });
+      toast({ variant: 'destructive', title: 'AI Error', description: e.message });
     } finally {
-        setIsGenerating(false);
+      setIsGenerating(false);
     }
-  }
+    }
 
   const useGeneratedDescription = () => {
     if (generatedDescription) {
@@ -119,11 +129,21 @@ export default function NewListingPage() {
               formData.append(key, String(value));
           }
       });
-      
-      const { id } = await createListing(formData);
+
+      const res = await fetch('/api/listings', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(err?.error || 'Failed to create listing');
+      }
+
+      const { id } = await res.json();
       clearInterval(progressInterval);
       setUploadProgress(100);
-      
+
       toast({
         title: 'Listing Submitted!',
         description: 'Your property is now pending review by our team.',

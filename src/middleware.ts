@@ -11,15 +11,24 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('__session')?.value;
   
   console.log(`[Middleware] ${request.method} ${pathname} - Session Cookie: ${sessionCookie ? '[present]' : '[missing]'}`);
+
+  // Skip middleware for server action requests — they handle their own auth
+  if (request.headers.get('Next-Action')) {
+    return NextResponse.next();
+  }
   
   // These are public pages, but if a user is logged in, we don't want them to see it.
   const authPages = ['/login', '/signup'];
   if (authPages.includes(pathname) && sessionCookie) {
+    // Only redirect navigation requests (GET), not programmatic POSTs
+    if (request.method !== 'GET') {
+      return NextResponse.next();
+    }
     // Try to verify the session cookie and redirect users to a role-appropriate page
     try {
       const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
       const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-      const userRole = userDoc.exists() ? userDoc.data()?.role : null;
+      const userRole = userDoc.exists ? userDoc.data()?.role : null;
 
       if (userRole === 'ADMIN') {
         return NextResponse.redirect(new URL('/admin', request.url));
@@ -61,7 +70,7 @@ export async function middleware(request: NextRequest) {
       try {
         const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
         const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-        const userRole = userDoc.exists() ? userDoc.data()?.role : null;
+        const userRole = userDoc.exists ? userDoc.data()?.role : null;
 
         console.log(`[Middleware] ${pathname} - User: ${decodedToken.uid}, Role: ${userRole}`);
 
