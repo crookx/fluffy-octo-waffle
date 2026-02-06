@@ -122,7 +122,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       
       toast({
         title: 'Listing Updated!',
-        description: 'Your changes have been submitted for re-approval.',
+        description: 'Your listing has been successfully updated.',
         action: <ToastAction altText="View" onClick={() => router.push(`/listings/${id}`)}>View</ToastAction>
       });
 

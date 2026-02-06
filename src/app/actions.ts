@@ -366,6 +366,13 @@ export async function editListingAction(listingId: string, formData: FormData): 
       updatePayload.badgeSuggestion = FieldValue.delete();
     }
 
+    // If the listing was rejected, any edit should resubmit it for review.
+    if (rawData.status === 'rejected') {
+        updatePayload.status = 'pending';
+        updatePayload.badge = null; // Reset badge on resubmission
+        updatePayload.badgeSuggestion = FieldValue.delete();
+    }
+
     await docRef.update(updatePayload);
     
     revalidatePath('/');
