@@ -8,8 +8,6 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
   Form,
-  FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -25,6 +23,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ToastAction } from '@/components/ui/toast';
 import { ListingLocationPicker } from '@/components/listing-location-picker';
+import { FileDragAndDrop } from '@/components/file-drag-and-drop';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
@@ -107,15 +106,12 @@ export default function NewListingPage() {
 
     try {
       const formData = new FormData();
-      Object.keys(formSchema.shape).forEach(key => {
-        const value = values[key as keyof typeof values];
-        if (key === 'images' && value) {
-            Array.from(value as FileList).forEach(file => formData.append('images', file));
-        } else if (key === 'evidence' && value) {
-          Array.from(value as FileList).forEach(file => formData.append('evidence', file));
-        } else if (value) {
-            formData.append(key, String(value));
-        }
+      Object.entries(values).forEach(([key, value]) => {
+          if (value instanceof FileList) {
+              Array.from(value).forEach(file => formData.append(key, file));
+          } else if (value) {
+              formData.append(key, String(value));
+          }
       });
       
       const { id } = await createListing(formData);
@@ -163,7 +159,7 @@ export default function NewListingPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Property Title</FormLabel>
-                    <FormControl><Input placeholder="e.g., 5 Acres in Kitengela" {...field} /></FormControl>
+                    <Input placeholder="e.g., 5 Acres in Kitengela" {...field} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -175,7 +171,7 @@ export default function NewListingPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>General Location</FormLabel>
-                      <FormControl><Input placeholder="e.g., Isinya" {...field} /></FormControl>
+                      <Input placeholder="e.g., Isinya" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -186,7 +182,7 @@ export default function NewListingPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>County</FormLabel>
-                      <FormControl><Input placeholder="e.g., Kajiado County" {...field} /></FormControl>
+                      <Input placeholder="e.g., Kajiado County" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -201,7 +197,7 @@ export default function NewListingPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Area (in Acres)</FormLabel>
-                      <FormControl><Input type="number" placeholder="e.g., 5" {...field} /></FormControl>
+                      <Input type="number" placeholder="e.g., 5" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -212,7 +208,7 @@ export default function NewListingPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Plot Dimensions</FormLabel>
-                      <FormControl><Input placeholder="e.g., 100x100 ft" {...field} /></FormControl>
+                      <Input placeholder="e.g., 100x100 ft" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -225,7 +221,7 @@ export default function NewListingPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Land Type</FormLabel>
-                      <FormControl><Input placeholder="e.g., Residential, Agricultural" {...field} /></FormControl>
+                      <Input placeholder="e.g., Residential, Agricultural" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -236,7 +232,7 @@ export default function NewListingPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Price (Ksh)</FormLabel>
-                      <FormControl><Input type="number" placeholder="e.g., 5500000" {...field} /></FormControl>
+                      <Input type="number" placeholder="e.g., 5500000" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -280,7 +276,7 @@ export default function NewListingPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Property Description</FormLabel>
-                    <FormControl><Textarea placeholder="A detailed description of the property will appear here..." className="min-h-[150px]" {...field} /></FormControl>
+                    <Textarea placeholder="A detailed description of the property will appear here..." className="min-h-[150px]" {...field} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -293,30 +289,19 @@ export default function NewListingPage() {
               <Separator />
 
               {/* File Uploads */}
-               <FormField
-                control={form.control}
-                name="images"
-                render={({ field: { onChange, ...rest } }) => (
-                  <FormItem>
-                    <FormLabel>Property Images</FormLabel>
-                    <FormControl><Input type="file" accept="image/*" multiple {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
-                    <FormDescription>The first image will be the main photo. You can upload multiple images.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <FileDragAndDrop 
+                  name="images"
+                  label="Property Images"
+                  description="The first image will be the main photo. You can upload multiple images."
+                  accept="image/*"
+                  multiple
               />
 
-              <FormField
-                control={form.control}
+              <FileDragAndDrop
                 name="evidence"
-                render={({ field: { onChange, ...rest } }) => (
-                  <FormItem>
-                    <FormLabel>Evidence Documents</FormLabel>
-                    <FormControl><Input type="file" multiple {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
-                    <FormDescription>Upload title deed, survey maps, agreements, etc. (images or PDFs).</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Evidence Documents"
+                description="Upload title deed, survey maps, agreements, etc. (images or PDFs)."
+                multiple
               />
 
               {isSubmitting && (

@@ -8,8 +8,6 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
   Form,
-  FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -27,6 +25,7 @@ import { ToastAction } from '@/components/ui/toast';
 import type { Listing } from '@/lib/types';
 import Image from 'next/image';
 import { ListingLocationPicker } from '@/components/listing-location-picker';
+import { FileDragAndDrop } from '@/components/file-drag-and-drop';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
@@ -109,16 +108,12 @@ export function EditListingForm({ listing }: { listing: Listing }) {
 
     try {
       const formData = new FormData();
-      Object.keys(formSchema.shape).forEach(key => {
-        const valueKey = key as keyof typeof values;
-        const value = values[valueKey];
-        if (key === 'images' && value && (value as FileList).length > 0) {
-            Array.from(value as FileList).forEach(file => formData.append('images', file));
-        } else if (key === 'evidence' && value) {
-          Array.from(value as FileList).forEach(file => formData.append('evidence', file));
-        } else if (value !== undefined && value !== null) {
-            formData.append(key, String(value));
-        }
+      Object.entries(values).forEach(([key, value]) => {
+          if (value instanceof FileList) {
+              Array.from(value).forEach(file => formData.append(key, file));
+          } else if (value !== undefined && value !== null) {
+              formData.append(key, String(value));
+          }
       });
       
       const { id } = await editListingAction(listing.id, formData);
@@ -166,7 +161,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Property Title</FormLabel>
-                    <FormControl><Input placeholder="e.g., 5 Acres in Kitengela" {...field} /></FormControl>
+                    <Input placeholder="e.g., 5 Acres in Kitengela" {...field} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -178,7 +173,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>General Location</FormLabel>
-                      <FormControl><Input placeholder="e.g., Isinya" {...field} /></FormControl>
+                      <Input placeholder="e.g., Isinya" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -189,7 +184,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>County</FormLabel>
-                      <FormControl><Input placeholder="e.g., Kajiado County" {...field} /></FormControl>
+                      <Input placeholder="e.g., Kajiado County" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -203,7 +198,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Area (in Acres)</FormLabel>
-                      <FormControl><Input type="number" placeholder="e.g., 5" {...field} /></FormControl>
+                      <Input type="number" placeholder="e.g., 5" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -214,7 +209,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Plot Dimensions</FormLabel>
-                      <FormControl><Input placeholder="e.g., 100x100 ft" {...field} /></FormControl>
+                      <Input placeholder="e.g., 100x100 ft" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -227,7 +222,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Land Type</FormLabel>
-                      <FormControl><Input placeholder="e.g., Residential, Agricultural" {...field} /></FormControl>
+                      <Input placeholder="e.g., Residential, Agricultural" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -238,7 +233,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Price (Ksh)</FormLabel>
-                      <FormControl><Input type="number" placeholder="e.g., 5500000" {...field} /></FormControl>
+                      <Input type="number" placeholder="e.g., 5500000" {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -280,7 +275,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Property Description</FormLabel>
-                    <FormControl><Textarea placeholder="A detailed description of the property will appear here..." className="min-h-[150px]" {...field} /></FormControl>
+                    <Textarea placeholder="A detailed description of the property will appear here..." className="min-h-[150px]" {...field} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -292,53 +287,50 @@ export function EditListingForm({ listing }: { listing: Listing }) {
 
               <Separator />
 
-               <FormField
-                control={form.control}
-                name="images"
-                render={({ field: { onChange, ...rest } }) => (
-                  <FormItem>
-                    <FormLabel>Property Images</FormLabel>
-                     <div className="p-4 border-2 border-dashed rounded-lg space-y-4">
-                        <p className="text-sm text-muted-foreground">Current Images:</p>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {listing.images.map((image, index) => (
-                                <div key={index} className="relative aspect-video">
-                                    <Image src={image.url} alt={`Property image ${index + 1}`} fill className="rounded-md object-cover" />
-                                </div>
-                            ))}
-                        </div>
+              <div className="space-y-2">
+                <FormLabel>Current Property Images</FormLabel>
+                <div className="p-4 border-2 border-dashed rounded-lg space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {listing.images.map((image, index) => (
+                            <div key={index} className="relative aspect-video">
+                                <Image src={image.url} alt={`Property image ${index + 1}`} fill className="rounded-md object-cover" />
+                            </div>
+                        ))}
                     </div>
-                    <FormControl><Input type="file" accept="image/*" multiple {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
-                    <FormDescription>Upload new images to replace all current images. Leave blank to keep existing images.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                </div>
+              </div>
+
+              <FileDragAndDrop 
+                  name="images"
+                  label="Upload New Property Images"
+                  description="Upload new images to replace all current images. Drag and drop or click to select."
+                  accept="image/*"
+                  multiple
               />
 
-              <FormField
-                control={form.control}
+              <div className="space-y-2">
+                <FormLabel>Current Evidence</FormLabel>
+                 {listing.evidence.length > 0 ? (
+                    <div className="space-y-2 p-4 border-2 border-dashed rounded-lg">
+                        <ul className="list-disc list-inside text-sm">
+                            {listing.evidence.map(doc => (
+                                <li key={doc.id} className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-muted-foreground" />
+                                    <span>{doc.name}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                 ) : (
+                    <p className="text-sm text-muted-foreground p-4 border-2 border-dashed rounded-lg">No evidence documents have been uploaded yet.</p>
+                 )}
+              </div>
+
+              <FileDragAndDrop
                 name="evidence"
-                render={({ field: { onChange, ...rest } }) => (
-                  <FormItem>
-                    <FormLabel>Evidence Documents</FormLabel>
-                     {listing.evidence.length > 0 && (
-                        <div className="space-y-2 p-4 border-2 border-dashed rounded-lg">
-                            <p className="text-sm text-muted-foreground">Current Evidence:</p>
-                            <ul className="list-disc list-inside text-sm">
-                                {listing.evidence.map(doc => (
-                                    <li key={doc.id} className="flex items-center gap-2">
-                                        <FileText className="h-4 w-4 text-muted-foreground" />
-                                        <span>{doc.name}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                     )}
-                    <FormControl><Input type="file" multiple {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
-                    <FormDescription>You can upload additional evidence documents (title deed, survey maps, etc.). Existing documents will be kept.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Add More Evidence"
+                description="You can upload additional evidence documents (title deed, survey maps, etc.). Existing documents will be kept."
+                multiple
               />
 
               {isSubmitting && (

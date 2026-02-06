@@ -318,7 +318,51 @@ export async function editListingAction(listingId: string, formData: FormData): 
     // Handle adding new evidence (does not delete existing)
     const evidenceFiles = formData.getAll('evidence') as File[];
     if (evidenceFiles.length > 0 && evidenceFiles[0].size > 0) {
-      // (logic for adding evidence remains the same)
+      const evidenceBatch = adminDb.batch();
+
+      await Promise.all(evidenceFiles.map(async (file) => {
+          if (file.size > 0) {
+              const evidenceRef = adminDb.collection('evidence').doc();
+              const filePath = `evidence/${authUser.uid}/${listingId}/${Date.now()}-${file.name}`;
+              const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+              await bucket.file(filePath).save(fileBuffer, {
+                  metadata: {
+                      contentType: file.type,
+                      metadata: { ownerId: authUser.uid, listingId: listingId }
+                  }
+              });
+
+              let contentForAi = `(File: ${file.name}, Type: ${file.type} - cannot be summarized)`;
+              if (file.type.startsWith('image/')) {
+                  try {
+                      const imageDataUri = `data:${file.type};base64,${fileBuffer.toString('base64')}`;
+                      const ocrResult = await extractTextFromImage({ imageDataUri });
+                      contentForAi = ocrResult.extractedText?.trim() || `(Image file: ${file.name} - No text found)`;
+                  } catch (ocrError) {
+                      console.error(`OCR failed for ${file.name}:`, ocrError);
+                      // Don't throw, just use the placeholder content
+                  }
+              }
+
+              evidenceBatch.set(evidenceRef, {
+                  listingId: listingId,
+                  ownerId: authUser.uid,
+                  name: file.name,
+                  type: 'other',
+                  storagePath: filePath,
+                  uploadedAt: FieldValue.serverTimestamp(),
+                  content: contentForAi,
+                  verified: false,
+              });
+          }
+      }));
+      await evidenceBatch.commit();
+      
+      // Adding evidence should also trigger re-review
+      updatePayload.status = 'pending';
+      updatePayload.badge = null;
+      updatePayload.badgeSuggestion = FieldValue.delete();
     }
 
     await docRef.update(updatePayload);
