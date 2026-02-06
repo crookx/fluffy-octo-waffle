@@ -25,13 +25,16 @@ if (!getApps().length) {
     );
   }
   
-  if (!serviceAccount) {
-      throw new Error('Firebase Admin SDK Error: Service account credentials could not be loaded.');
+  if (!serviceAccount || !serviceAccount.project_id) {
+      throw new Error('Firebase Admin SDK Error: Service account credentials could not be loaded or are missing `project_id`.');
   }
+
+  // Automatically determine the storage bucket if not provided in environment variables
+  const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${serviceAccount.project_id}.appspot.com`;
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    storageBucket: storageBucket,
   });
 }
 
