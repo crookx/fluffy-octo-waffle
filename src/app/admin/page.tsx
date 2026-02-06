@@ -9,9 +9,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Inbox } from 'lucide-react';
+import { Eye, Inbox, List, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
@@ -41,7 +41,11 @@ export default async function AdminDashboard() {
   
   const pendingListings = listings.filter(l => l.status === 'pending');
   const otherListings = listings.filter(l => l.status !== 'pending');
-
+  
+  const totalListings = listings.length;
+  const pendingListingsCount = pendingListings.length;
+  const approvedListingsCount = listings.filter(l => l.status === 'approved').length;
+  const rejectedListingsCount = listings.filter(l => l.status === 'rejected').length;
 
   return (
     <div className="container mx-auto py-12">
@@ -51,19 +55,58 @@ export default async function AdminDashboard() {
         <p className="text-muted-foreground">Review and manage all property listings. {pendingListings.length} listing(s) require your review.</p>
       </div>
 
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Listings</CardTitle>
+            <List className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalListings}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingListingsCount}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Approved Listings</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{approvedListingsCount}</div>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rejected Listings</CardTitle>
+            <XCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{rejectedListingsCount}</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <p className="text-sm text-muted-foreground">
-              Manage listings, review trust badges, and respond to incoming reports and messages.
-            </p>
-            <Button asChild variant="outline">
-              <Link href="/admin/inbox">
-                <Inbox className="mr-2 h-4 w-4" />
-                Reports &amp; Messages
-              </Link>
-            </Button>
-          </div>
+        <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <CardTitle>All Listings</CardTitle>
+              <Button asChild variant="outline">
+                <Link href="/admin/inbox">
+                  <Inbox className="mr-2 h-4 w-4" />
+                  Reports &amp; Messages
+                </Link>
+              </Button>
+            </div>
+        </CardHeader>
+        <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -77,9 +120,16 @@ export default async function AdminDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...pendingListings, ...otherListings].map((listing) => (
+                {listings.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      No listings found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  [...pendingListings, ...otherListings].map((listing) => (
                   <TableRow key={listing.id} className={cn(listing.status === 'pending' && 'bg-warning/10 hover:bg-warning/20')}>
-                    <TableCell className="font-semibold">
+                    <TableCell>
                         <div className="flex flex-col">
                           <span className="font-semibold">{listing.title}</span>
                           <span className="text-xs text-muted-foreground">{listing.location}</span>
@@ -112,7 +162,7 @@ export default async function AdminDashboard() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                )))}
               </TableBody>
             </Table>
           </div>
