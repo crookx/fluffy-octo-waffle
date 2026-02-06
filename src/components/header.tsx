@@ -3,11 +3,18 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { LandPlot, LayoutDashboard, LogOut, PlusCircle, MessageSquare } from 'lucide-react';
+import { LandPlot, LayoutDashboard, LogOut, PlusCircle, MessageSquare, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/providers';
 import { auth, db } from '@/lib/firebase';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,7 +98,7 @@ export function Header() {
             <>
               {user ? (
                 <>
-                  <Button asChild>
+                  <Button asChild className="hidden sm:inline-flex">
                     <Link href="/listings/new">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       New Listing
@@ -130,14 +137,70 @@ export function Header() {
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" asChild>
+                  <Button variant="ghost" asChild className="hidden sm:inline-flex">
                     <Link href="/login">Log in</Link>
                   </Button>
-                  <Button variant="accent" asChild>
+                  <Button variant="accent" asChild className="hidden sm:inline-flex">
                     <Link href="/signup">Sign Up</Link>
                   </Button>
                 </>
               )}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="sm:hidden" aria-label="Open menu">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72">
+                  <SheetHeader>
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6 flex flex-col gap-4">
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={cn(
+                          'text-sm font-medium',
+                          pathname === link.href ? 'text-foreground' : 'text-muted-foreground'
+                        )}
+                      >
+                        {link.label}
+                        {link.label === 'Admin' && pendingCount > 0 && (
+                          <Badge variant="destructive" className="ml-2 h-5 w-5 justify-center p-0">
+                            {pendingCount}
+                          </Badge>
+                        )}
+                      </Link>
+                    ))}
+                    {user ? (
+                      <>
+                        <Link href="/listings/new" className="text-sm font-medium">
+                          New Listing
+                        </Link>
+                        <Link href="/dashboard" className="text-sm font-medium">
+                          Dashboard
+                        </Link>
+                        <Link href="/messages" className="text-sm font-medium">
+                          Messages
+                        </Link>
+                        <Button variant="outline" onClick={handleLogout}>
+                          Log out
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Link href="/login" className="text-sm font-medium">
+                          Log in
+                        </Link>
+                        <Link href="/signup" className="text-sm font-medium">
+                          Sign Up
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
             </>
           )}
         </div>

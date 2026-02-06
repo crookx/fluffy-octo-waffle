@@ -29,6 +29,8 @@ import { ContactSellerButton } from './_components/contact-seller-button';
 import { BuyerTip } from '@/components/buyer-tip';
 import { DynamicLocationMap } from '@/components/dynamic-location-map';
 import { DynamicListingCarousel } from '@/components/dynamic-listing-carousel';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const sessionCookie = cookies().get('__session')?.value;
@@ -110,6 +112,17 @@ export default async function ListingDetailPage({
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 md:py-12 pb-24 md:pb-12">
+      <Alert className="mb-6 border-primary/30 bg-primary/5">
+        <AlertTitle>Trust &amp; Verification</AlertTitle>
+        <AlertDescription>
+          Trust badges and approval statuses are based on seller-submitted documents and are not legal guarantees.
+          Learn more in our{' '}
+          <Link href="/trust" className="underline font-medium">
+            Trust &amp; Verification guide
+          </Link>
+          .
+        </AlertDescription>
+      </Alert>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
         {/* Main Content */}
         <div className="md:col-span-2 space-y-8">
