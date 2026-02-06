@@ -1,10 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { addListing, getListings, updateListing } from './lib/data';
-import type { BadgeStatus, Listing } from './lib/types';
-import { summarizeEvidence } from './ai/flows/summarize-evidence-for-admin-review';
-import { flagSuspiciousUploadPatterns } from './ai/flows/flag-suspicious-upload-patterns';
+import { addListing, getListings, updateListing } from '@/lib/data';
+import type { BadgeStatus, Listing } from '@/lib/types';
+import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
+import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
 
 // Action to create a new listing
 export async function createListing(formData: FormData): Promise<Listing> {
