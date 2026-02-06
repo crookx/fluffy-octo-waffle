@@ -24,9 +24,11 @@ service cloud.firestore {
     match /listings/{listingId} {
       // Allow public read only for 'approved' listings.
       // Authenticated users can read their own listings regardless of status.
-      // Admins can read all listings.
-      allow read: if resource.data.status == 'approved' ||
-                     (request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin()));
+      allow get: if resource.data.status == 'approved' ||
+                    (request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin()));
+      
+      // Admins can list all listings. Other users can only list approved ones.
+      allow list: if isAdmin() || request.query.get('status') == 'approved';
 
       // Any authenticated user can create a listing.
       // We tie ownership via request.resource.data.ownerId.
@@ -57,7 +59,9 @@ service cloud.firestore {
     
     // Conversations can be read/written by participants
     match /conversations/{conversationId} {
-      allow read, update: if request.auth.uid in resource.data.participantIds;
+      // Participants can get/update their conversation, or list conversations they are in.
+      allow get, update: if request.auth.uid in resource.data.participantIds;
+      allow list: if request.auth.uid in request.query.get('participantIds');
       allow create: if request.auth.uid in request.resource.data.participantIds;
       
       // Messages subcollection
@@ -69,6 +73,16 @@ service cloud.firestore {
         allow create: if get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid])
                       && request.resource.data.senderId == request.auth.uid;
       }
+    }
+
+    // Admins can read and update contact messages.
+    match /contactMessages/{messageId} {
+      allow read, update: if isAdmin();
+    }
+    
+    // Admins can read and update listing reports.
+    match /listingReports/{reportId} {
+      allow read, update: if isAdmin();
     }
   }
 }
