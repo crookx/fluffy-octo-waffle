@@ -44,9 +44,9 @@ export default async function AdminReviewPage({ params }: { params: { id: string
         <p className="text-muted-foreground">Listing ID: {listing.id}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-        {/* Listing Details */}
-        <div className="md:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
             <Card>
                  <CardHeader className="p-0 relative">
                     <DynamicListingCarousel images={listing.images} title={listing.title} className="w-full rounded-t-lg overflow-hidden" />
@@ -74,11 +74,16 @@ export default async function AdminReviewPage({ params }: { params: { id: string
                 </CardContent>
             </Card>
 
+            {/* Actions for mobile/tablet */}
+            <div className="lg:hidden space-y-6">
+                <AdminActions listing={listing} />
+            </div>
+
             <Card>
             <CardHeader>
                 <CardTitle>Uploaded Evidence</CardTitle>
                 <CardDescription>Documents provided by the seller for verification. Click to view.</CardDescription>
-            </CardHeader>
+            </-cardheader>
             <CardContent>
                 {listing.evidence && listing.evidence.length > 0 ? (
                 <ul className="space-y-3">
@@ -111,8 +116,8 @@ export default async function AdminReviewPage({ params }: { params: { id: string
             </Card>
         </div>
 
-        {/* Admin Actions */}
-        <div className="space-y-6">
+        {/* Admin Actions Sidebar for Desktop */}
+        <div className="hidden lg:block space-y-6 lg:sticky lg:top-24 h-min">
             <AdminActions listing={listing} />
         </div>
       </div>

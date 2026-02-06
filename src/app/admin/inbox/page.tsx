@@ -107,7 +107,7 @@ export default async function AdminInboxPage() {
                   <TableRow key={message.id}>
                     <TableCell className="font-medium">{message.name}</TableCell>
                     <TableCell>{message.email}</TableCell>
-                    <TableCell className="max-w-md truncate" title={message.message}>
+                    <TableCell className="max-w-md whitespace-pre-wrap">
                       {message.message}
                     </TableCell>
                     <TableCell>
@@ -153,7 +153,7 @@ export default async function AdminInboxPage() {
                         <span className="text-xs text-muted-foreground">{report.reporter?.email || 'No email'}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-md truncate" title={report.reason}>
+                    <TableCell className="max-w-md whitespace-pre-wrap">
                       {report.reason}
                     </TableCell>
                     <TableCell>
