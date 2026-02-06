@@ -13,10 +13,18 @@ export async function middleware(request: NextRequest) {
   }
 
   const protectedPages = ['/admin', '/dashboard', '/listings/new'];
-  const isProtectedRoute = protectedPages.some(p => pathname.startsWith(p));
+  let isProtectedRoute = protectedPages.some(p => pathname.startsWith(p));
+
+  // Regex to match /listings/{any-id}/edit
+  const editListingPattern = /^\/listings\/[^/]+\/edit$/;
+  if (!isProtectedRoute) {
+    isProtectedRoute = editListingPattern.test(pathname);
+  }
 
   if (isProtectedRoute && !sessionCookie) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
   }
   
   return NextResponse.next();

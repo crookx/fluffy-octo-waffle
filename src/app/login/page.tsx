@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -39,6 +39,7 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -61,7 +62,9 @@ export default function LoginPage() {
       });
 
       toast({ title: 'Login Successful', description: "Welcome back!" });
-      router.push('/dashboard');
+      
+      const redirectUrl = searchParams.get('redirect') || '/dashboard';
+      router.push(redirectUrl);
       router.refresh(); // Important to re-run middleware and server components
     } catch (error: any) {
       toast({

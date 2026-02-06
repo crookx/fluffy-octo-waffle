@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { formatRelative } from 'date-fns';
 import { redirect } from 'next/navigation';
 import type { UserProfile } from '@/lib/types';
+import { Edit } from 'lucide-react';
 
 async function getAuthenticatedUser() {
     const sessionCookie = cookies().get('__session')?.value;
@@ -62,6 +63,7 @@ export default async function SellerDashboard() {
                         <TableHead>Status</TableHead>
                         <TableHead className="hidden md:table-cell">Created</TableHead>
                         <TableHead className="text-right">Price (Ksh)</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -69,7 +71,6 @@ export default async function SellerDashboard() {
                         <TableRow key={listing.id}>
                             <TableCell className="font-medium">
                                 <Link href={`/listings/${listing.id}`} className="hover:underline">{listing.title}</Link>
-
                             </TableCell>
                             <TableCell>
                                 <StatusBadge status={listing.status} />
@@ -79,6 +80,14 @@ export default async function SellerDashboard() {
                             </TableCell>
                             <TableCell className="text-right">
                                 {listing.price.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <Button asChild variant="ghost" size="icon">
+                                    <Link href={`/listings/${listing.id}/edit`}>
+                                        <Edit className="h-4 w-4" />
+                                        <span className="sr-only">Edit Listing</span>
+                                    </Link>
+                                </Button>
                             </TableCell>
                         </TableRow>
                     ))}

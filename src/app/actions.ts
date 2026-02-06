@@ -191,6 +191,137 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
   return { id: docRef.id };
 }
 
+export async function editListingAction(listingId: string, formData: FormData): Promise<{id: string}> {
+    const authUser = await getAuthenticatedUser();
+    if (!authUser) {
+      throw new Error('Authentication required. Please log in.');
+    }
+
+    const docRef = adminDb.collection('listings').doc(listingId);
+    const listingDoc = await docRef.get();
+
+    if (!listingDoc.exists) {
+        throw new Error("Listing not found.");
+    }
+
+    const existingListing = listingDoc.data() as Listing;
+
+    // Authorization check
+    if (existingListing.ownerId !== authUser.uid) {
+        throw new Error("Authorization failed: You do not own this listing.");
+    }
+
+    const bucket = adminStorage.bucket();
+    let mainImageUrl = existingListing.image;
+    let imageAnalysisResult: ImageAnalysis | undefined = undefined;
+
+
+    // 1. Handle main property image update
+    const mainImageFile = formData.get('mainImage') as File;
+    if (mainImageFile && mainImageFile.size > 0) {
+        // Delete old image if it's a GCS file
+        if (existingListing.image && existingListing.image.includes(bucket.name)) {
+            try {
+                const oldImagePath = existingListing.image.split(`${bucket.name}/`)[1].split('?')[0];
+                await bucket.file(oldImagePath).delete();
+            } catch (error) {
+                console.error(`Failed to delete old main image ${existingListing.image}`, error);
+            }
+        }
+
+        // Upload new image
+        const imageBuffer = Buffer.from(await mainImageFile.arrayBuffer());
+        const imagePath = `listings/${authUser.uid}/${Date.now()}-${mainImageFile.name}`;
+        
+        await bucket.file(imagePath).save(imageBuffer, {
+            metadata: { contentType: mainImageFile.type }
+        });
+        mainImageUrl = `https://storage.googleapis.com/${bucket.name}/${imagePath}`;
+        
+        try {
+          const imageDataUri = `data:${mainImageFile.type};base64,${imageBuffer.toString('base64')}`;
+          imageAnalysisResult = await analyzePropertyImage({ imageDataUri });
+        } catch (e) {
+            console.error('Image analysis failed:', e);
+            throw new Error('AI image analysis failed. The image might be of a low quality or unsupported format.');
+        }
+
+    }
+    
+    // 2. Handle adding new evidence (does not delete existing)
+    const evidenceFiles = formData.getAll('evidence') as File[];
+    if (evidenceFiles.length > 0 && evidenceFiles[0].size > 0) {
+      const evidenceBatch = adminDb.batch();
+  
+      await Promise.all(evidenceFiles.map(async (file) => {
+          if (file.size > 0) {
+              const evidenceRef = adminDb.collection('evidence').doc();
+              const filePath = `evidence/${authUser.uid}/${docRef.id}/${Date.now()}-${file.name}`;
+              const fileBuffer = Buffer.from(await file.arrayBuffer());
+  
+              await bucket.file(filePath).save(fileBuffer, {
+                  metadata: {
+                      contentType: file.type,
+                      metadata: { ownerId: authUser.uid, listingId: docRef.id }
+                  }
+              });
+  
+              let contentForAi = `(File: ${file.name}, Type: ${file.type} - cannot be summarized)`;
+              if (file.type.startsWith('image/')) {
+                  try {
+                      const imageDataUri = `data:${file.type};base64,${fileBuffer.toString('base64')}`;
+                      const ocrResult = await extractTextFromImage({ imageDataUri });
+                      contentForAi = ocrResult.extractedText?.trim() || `(Image file: ${file.name} - No text found)`;
+                  } catch (ocrError) {
+                      console.error(`OCR failed for ${file.name}:`, ocrError);
+                  }
+              }
+  
+              evidenceBatch.set(evidenceRef, {
+                  listingId: docRef.id,
+                  ownerId: authUser.uid,
+                  name: file.name,
+                  type: 'other',
+                  storagePath: filePath,
+                  uploadedAt: FieldValue.serverTimestamp(),
+                  content: contentForAi,
+                  verified: false,
+              });
+          }
+      }));
+      await evidenceBatch.commit();
+    }
+    
+    const updatedListingData = {
+        title: formData.get('title') as string,
+        location: formData.get('location') as string,
+        county: formData.get('county') as string,
+        price: Number(formData.get('price')),
+        area: Number(formData.get('area')),
+        size: formData.get('size') as string,
+        landType: formData.get('landType') as string,
+        description: formData.get('description') as string,
+        image: mainImageUrl,
+        // Reset status to 'pending' for admin re-review, unless it was rejected.
+        status: existingListing.status === 'rejected' ? 'rejected' : 'pending' as ListingStatus,
+        updatedAt: FieldValue.serverTimestamp(),
+        // Clear old AI suggestions as they may be invalid now
+        imageAnalysis: imageAnalysisResult || FieldValue.delete(),
+        badgeSuggestion: FieldValue.delete(),
+        badge: null,
+    };
+
+    await docRef.update(updatedListingData);
+    
+    revalidatePath('/');
+    revalidatePath('/dashboard');
+    revalidatePath(`/listings/${listingId}`);
+    revalidatePath(`/listings/${listingId}/edit`);
+    revalidatePath('/admin');
+    
+    return { id: docRef.id };
+}
+
 
 // Action to update a listing's status and/or badge
 export async function updateListing(listingId: string, data: { status?: ListingStatus; badge?: BadgeValue }) {
@@ -229,9 +360,9 @@ export async function deleteListing(listingId: string) {
 
     if (!listingDoc.exists) throw new Error("Listing not found.");
 
-    const listing = listingDoc.data();
-    if (!listing) throw new Error("Listing data is missing.");
-
+    const listingData = listingDoc.data();
+    if (!listingData) throw new Error("Listing data is missing.");
+    const listing = listingData as Listing;
 
     // Authorization Check: Must be owner or admin
     if (listing.ownerId !== authUser.uid && authUser.role !== 'ADMIN') {
