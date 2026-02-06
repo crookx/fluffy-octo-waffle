@@ -181,7 +181,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="icon" disabled={isDeleting}>
+                <Button variant="destructive" size="icon" disabled={isDeleting} aria-label="Delete listing">
                   <Trash2 />
                 </Button>
               </AlertDialogTrigger>

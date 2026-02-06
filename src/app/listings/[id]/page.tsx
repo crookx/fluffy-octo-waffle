@@ -34,6 +34,7 @@ import { TrustBadge } from '@/components/trust-badge';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContactSellerButton } from './_components/contact-seller-button';
+import { BuyerTip } from '@/components/buyer-tip';
 
 const LocationMap = dynamic(() => import('@/components/location-map'), { 
   ssr: false, 
@@ -117,7 +118,7 @@ export default async function ListingDetailPage({
   ];
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8 md:py-12">
+    <div className="container mx-auto max-w-7xl px-4 py-8 md:py-12 pb-24 md:pb-12">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
         {/* Main Content */}
         <div className="md:col-span-2 space-y-8">
@@ -212,12 +213,13 @@ export default async function ListingDetailPage({
         {/* Context Sidebar */}
         <div className="space-y-6 md:sticky md:top-24 h-min">
           {canContact && (
-            <Card>
+            <Card className="hidden md:block">
               <CardContent className="p-4">
                 <ContactSellerButton listingId={listing.id} />
               </CardContent>
             </Card>
           )}
+          <BuyerTip />
           <Card>
             <CardHeader>
               <CardTitle>Uploaded Evidence</CardTitle>
@@ -240,6 +242,13 @@ export default async function ListingDetailPage({
           </Card>
         </div>
       </div>
+      
+      {/* Sticky CTA for Mobile */}
+      {canContact && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-10 bg-background/90 p-4 backdrop-blur-sm border-t">
+          <ContactSellerButton listingId={listing.id} />
+        </div>
+      )}
     </div>
   );
 }
