@@ -11,10 +11,10 @@ import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, LandPlot } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 const GoogleIcon = () => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4">
@@ -92,7 +92,7 @@ export default function LoginPage() {
 
     toast({ title: 'Login Successful', description: "Welcome back!" });
     
-    let fallbackRedirect = '/dashboard';
+    let fallbackRedirect = '/';
     try {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
@@ -101,14 +101,13 @@ export default function LoginPage() {
         fallbackRedirect = '/admin';
       } else if (role === 'SELLER') {
         fallbackRedirect = '/dashboard';
-      } else {
-        fallbackRedirect = '/'; // Buyers go to home page
       }
     } catch (roleError) {
-      fallbackRedirect = '/';
+      // Fallback already set to '/'
     }
     const redirectUrl = searchParams.get('redirect') || fallbackRedirect;
     router.push(redirectUrl);
+    router.refresh();
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -165,82 +164,98 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-sm py-10">
-      <Card>
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>Enter your credentials to access your account.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl><Input placeholder="you@example.com" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          className="pr-10"
-                          {...field}
-                        />
-                      </FormControl>
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? <EyeOff /> : <Eye />}
-                      </button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button variant="accent" type="submit" className="w-full" disabled={isSubmitting || isGoogleSubmitting}>
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Login with Email
-              </Button>
-            </form>
-          </Form>
-          
-          <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-              </div>
+    <div className="w-full lg:grid lg:min-h-[calc(100vh-4rem)] lg:grid-cols-2 xl:min-h-[calc(100vh-4rem)]">
+      <div className="flex items-center justify-center py-12">
+        <div className="mx-auto grid w-[350px] gap-6">
+          <div className="grid gap-2 text-center">
+            <h1 className="text-3xl font-bold">Login</h1>
+            <p className="text-balance text-muted-foreground">
+              Enter your email below to login to your account
+            </p>
           </div>
-          
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isSubmitting || isGoogleSubmitting}>
-            {isGoogleSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
-            Google
-          </Button>
-
-          <div className="mt-6 text-center text-sm">
-            Don't have an account?{' '}
-            <Link href="/signup" className="underline hover:text-primary">
+          <div className="grid gap-4">
+             <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl><Input placeholder="you@example.com" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                         <div className="flex items-center">
+                            <FormLabel>Password</FormLabel>
+                            <Link
+                                href="/forgot-password"
+                                className="ml-auto inline-block text-sm underline"
+                            >
+                                Forgot your password?
+                            </Link>
+                        </div>
+                        <div className="relative">
+                          <FormControl>
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              className="pr-10"
+                              {...field}
+                            />
+                          </FormControl>
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button variant="accent" type="submit" className="w-full" disabled={isSubmitting || isGoogleSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Login
+                  </Button>
+                </form>
+              </Form>
+             <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isSubmitting || isGoogleSubmitting}>
+                {isGoogleSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                Login with Google
+            </Button>
+          </div>
+          <div className="mt-4 text-center text-sm">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="underline">
               Sign up
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      <div className="hidden bg-muted lg:block relative">
+         <div className="absolute inset-0 bg-zinc-900" />
+         <div className="relative z-20 flex items-center text-lg font-medium text-white p-10">
+            <LandPlot className="mr-2 h-6 w-6" />
+            Kenya Land Trust
+        </div>
+        <div className="relative z-20 mt-auto p-10">
+            <blockquote className="space-y-2 text-white">
+                <p className="text-lg">
+                    "Transparency and trust are the cornerstones of every successful land transaction. We are here to build that foundation with you."
+                </p>
+                <footer className="text-sm">The Kenya Land Trust Team</footer>
+            </blockquote>
+        </div>
+      </div>
     </div>
   );
 }
