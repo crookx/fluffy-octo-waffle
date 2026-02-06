@@ -5,8 +5,7 @@ import path from 'path';
 
 if (!getApps().length) {
   const serviceAccountPath = path.join(process.cwd(), 'serviceAccountKey.json');
-  const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
-
+  
   let serviceAccount;
 
   if (fs.existsSync(serviceAccountPath)) {
@@ -18,19 +17,16 @@ if (!getApps().length) {
         'Could not initialize Firebase Admin SDK. The `serviceAccountKey.json` file appears to be malformed. Please ensure it is a valid JSON object.'
       );
     }
-  } else if (serviceAccountEnv) {
-    try {
-      serviceAccount = JSON.parse(serviceAccountEnv);
-    } catch (error: any) {
-      console.error('Error parsing FIREBASE_SERVICE_ACCOUNT env var:', error.message);
-      throw new Error(
-        "Firebase Admin SDK Error: 'serviceAccountKey.json' was not found. The fallback 'FIREBASE_SERVICE_ACCOUNT' environment variable was used, but it is malformed. Please ensure the env var is a valid JSON string or that 'serviceAccountKey.json' exists in your project root."
-      );
-    }
   } else {
+    // If the file doesn't exist, throw a clear error and log the path.
+    console.error(`Firebase Admin SDK Error: 'serviceAccountKey.json' was not found at path: ${serviceAccountPath}`);
     throw new Error(
-      'Firebase Admin SDK Error: Could not find `serviceAccountKey.json` in the project root, and the `FIREBASE_SERVICE_ACCOUNT` environment variable is not set. Please provide one of them.'
+      "Firebase Admin SDK Error: Could not find 'serviceAccountKey.json'. Please ensure the file exists in your project's root directory."
     );
+  }
+  
+  if (!serviceAccount) {
+      throw new Error('Firebase Admin SDK Error: Service account credentials could not be loaded.');
   }
 
   admin.initializeApp({
