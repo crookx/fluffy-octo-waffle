@@ -84,7 +84,7 @@ export default async function AdminInboxPage() {
   });
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
+    <div className="container mx-auto py-12 space-y-8">
        <div>
         <h1 className="text-3xl font-bold tracking-tight">Inbox</h1>
         <p className="text-muted-foreground">Review user messages and listing reports.</p>
@@ -107,7 +107,7 @@ export default async function AdminInboxPage() {
                                 <CardDescription>{message.email}</CardDescription>
                             </div>
                             <div className="text-right flex-shrink-0">
-                                <Badge variant={message.status === 'new' ? 'secondary' : 'outline'}>{message.status}</Badge>
+                                <Badge variant={message.status === 'new' ? 'warning' : 'outline'}>{message.status}</Badge>
                                 <p className="text-xs text-muted-foreground mt-1">
                                     {message.createdAt ? formatDistanceToNow(message.createdAt, { addSuffix: true }) : 'N/A'}
                                 </p>
@@ -150,7 +150,7 @@ export default async function AdminInboxPage() {
                                 </CardDescription>
                             </div>
                              <div className="text-right flex-shrink-0">
-                                <Badge variant={report.status === 'new' ? 'secondary' : 'outline'}>{report.status}</Badge>
+                                <Badge variant={report.status === 'new' ? 'warning' : 'outline'}>{report.status}</Badge>
                                 <p className="text-xs text-muted-foreground mt-1">
                                     {report.createdAt ? formatDistanceToNow(report.createdAt, { addSuffix: true }) : 'N/A'}
                                 </p>

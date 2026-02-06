@@ -38,7 +38,7 @@ export default async function AdminReviewPage({ params }: { params: { id: string
   const isImageSuspicious = listing.imageAnalysis?.isSuspicious === true;
 
   return (
-    <div className="container mx-auto max-w-7xl py-10">
+    <div className="container mx-auto max-w-7xl py-12">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Admin Review</h1>
         <p className="text-muted-foreground">Listing ID: {listing.id}</p>
@@ -83,7 +83,7 @@ export default async function AdminReviewPage({ params }: { params: { id: string
             <CardHeader>
                 <CardTitle>Uploaded Evidence</CardTitle>
                 <CardDescription>Documents provided by the seller for verification. Click to view.</CardDescription>
-            </-cardheader>
+            </CardHeader>
             <CardContent>
                 {listing.evidence && listing.evidence.length > 0 ? (
                 <ul className="space-y-3">

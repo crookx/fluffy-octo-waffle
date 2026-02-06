@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, Inbox } from 'lucide-react';
 import { cookies } from 'next/headers';
@@ -43,13 +43,14 @@ export default async function AdminDashboard() {
 
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-12">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">Review and manage all property listings. {pendingListings.length} listing(s) require your review.</p>
+      </div>
+
       <Card>
-        <CardHeader>
-          <CardTitle>Admin Dashboard</CardTitle>
-          <CardDescription>Review and manage all property listings. {pendingListings.length} listing(s) require your review.</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <p className="text-sm text-muted-foreground">
               Manage listings, review trust badges, and respond to incoming reports and messages.
