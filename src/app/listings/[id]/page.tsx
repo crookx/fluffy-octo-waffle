@@ -33,6 +33,7 @@ import type { UserProfile } from '@/lib/types';
 import { TrustBadge } from '@/components/trust-badge';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ContactSellerButton } from './_components/contact-seller-button';
 
 const LocationMap = dynamic(() => import('@/components/location-map'), { 
   ssr: false, 
@@ -72,6 +73,8 @@ export default async function ListingDetailPage({
   // The owner and admins can see listings in any state.
   const isOwner = user?.uid === listing.ownerId;
   const isAdmin = user?.role === 'ADMIN';
+  const canContact = user && !isOwner;
+
 
   if (listing.status !== 'approved' && !isOwner && !isAdmin) {
     return (
@@ -208,6 +211,13 @@ export default async function ListingDetailPage({
 
         {/* Context Sidebar */}
         <div className="space-y-6 md:sticky md:top-24 h-min">
+          {canContact && (
+            <Card>
+              <CardContent className="p-4">
+                <ContactSellerButton listingId={listing.id} />
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardHeader>
               <CardTitle>Uploaded Evidence</CardTitle>

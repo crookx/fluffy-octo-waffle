@@ -71,3 +71,30 @@ export type UserProfile = {
   createdAt: any; // Firestore timestamp
   verified: boolean;
 };
+
+export type Conversation = {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  listingImage: string;
+  participantIds: string[];
+  participants: {
+    [key: string]: {
+      displayName: string;
+      photoURL: string;
+    };
+  };
+  lastMessage: {
+    text: string;
+    timestamp: any; // or Date
+    senderId: string;
+  } | null;
+  updatedAt: any; // or Date
+};
+
+export type Message = {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: any; // or Date
+};

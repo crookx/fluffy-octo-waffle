@@ -50,5 +50,21 @@ service cloud.firestore {
       // Deletion and updates are restricted to owner or admin.
       allow delete, update: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
+    
+    // Conversations can be read/written by participants
+    match /conversations/{conversationId} {
+      allow read, update: if request.auth.uid in resource.data.participantIds;
+      allow create: if request.auth.uid in request.resource.data.participantIds;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Participants can read all messages in a conversation
+        allow read: if get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
+        
+        // Participants can only create messages as themselves
+        allow create: if get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid])
+                      && request.resource.data.senderId == request.auth.uid;
+      }
+    }
   }
 }

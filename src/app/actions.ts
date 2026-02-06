@@ -458,3 +458,61 @@ export async function checkSuspiciousPatterns(documentDescriptions: string[]) {
         throw new Error(`AI fraud detection failed: ${e.message}`);
     }
 }
+
+// Action to start or retrieve a conversation
+export async function getOrCreateConversation(listingId: string): Promise<{ conversationId: string }> {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
+    throw new Error('Authentication required.');
+  }
+
+  const listing = await getListingById(listingId);
+  if (!listing) {
+    throw new Error('Listing not found.');
+  }
+
+  if (listing.ownerId === authUser.uid) {
+    throw new Error('You cannot start a conversation with yourself.');
+  }
+
+  const buyerId = authUser.uid;
+  const sellerId = listing.ownerId;
+  const participantIds = [buyerId, sellerId].sort();
+  // Create a deterministic ID to prevent duplicate conversations
+  const conversationId = `${participantIds[0]}_${participantIds[1]}_${listingId}`;
+  
+  const conversationRef = adminDb.collection('conversations').doc(conversationId);
+  const conversationDoc = await conversationRef.get();
+
+  if (conversationDoc.exists) {
+    return { conversationId };
+  } else {
+    // Fetch full user profiles to store display names and avatars
+    const buyerProfile = await adminAuth.getUser(buyerId);
+    const sellerProfile = await adminAuth.getUser(sellerId);
+
+    const newConversationData = {
+      listingId: listing.id,
+      listingTitle: listing.title,
+      listingImage: listing.images[0]?.url || '',
+      participantIds: [buyerId, sellerId],
+      participants: {
+        [buyerId]: {
+          displayName: buyerProfile.displayName || 'Anonymous',
+          photoURL: buyerProfile.photoURL || `https://i.pravatar.cc/150?u=${buyerId}`,
+        },
+        [sellerId]: {
+          displayName: sellerProfile.displayName || 'Anonymous Seller',
+          photoURL: sellerProfile.photoURL || `https://i.pravatar.cc/150?u=${sellerId}`,
+        },
+      },
+      lastMessage: null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    await conversationRef.set(newConversationData);
+    revalidatePath('/messages');
+    return { conversationId };
+  }
+}
