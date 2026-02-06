@@ -71,7 +71,6 @@ export default function SignupPage() {
     defaultValues: { displayName: '', email: '', password: '' },
   });
 
-  // Common function to handle successful login/signup flow
   const handleAuthSuccess = async (user: User) => {
     const idToken = await user.getIdToken();
     
@@ -88,7 +87,7 @@ export default function SignupPage() {
 
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
-    const redirectUrl = '/'; // New users start at the home page
+    const redirectUrl = '/onboarding';
     router.push(redirectUrl);
     router.refresh();
   }
@@ -97,14 +96,11 @@ export default function SignupPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // 2. Update Firebase Auth profile
       await updateProfile(user, { displayName: values.displayName });
 
-      // 3. Create user document in Firestore
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, {
         uid: user.uid,
@@ -112,12 +108,11 @@ export default function SignupPage() {
         displayName: values.displayName,
         photoURL: user.photoURL,
         phone: values.phone || null,
-        role: 'BUYER', // Default role for new users is BUYER
+        role: 'BUYER',
         verified: false,
         createdAt: serverTimestamp(),
       });
       
-      // 4. Set session cookie and redirect
       await handleAuthSuccess(user);
 
     } catch (error: any) {
@@ -138,7 +133,6 @@ export default function SignupPage() {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Check if user exists in Firestore, if not, create a document
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
@@ -149,7 +143,7 @@ export default function SignupPage() {
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 phone: user.phoneNumber || null,
-                role: 'BUYER', // Default role for new sign-ups is BUYER
+                role: 'BUYER',
                 verified: false,
                 createdAt: serverTimestamp(),
             });
@@ -171,6 +165,27 @@ export default function SignupPage() {
 
   return (
      <div className="w-full lg:grid lg:min-h-[calc(100vh-4rem)] lg:grid-cols-2 xl:min-h-[calc(100vh-4rem)]">
+      <div className="hidden bg-muted lg:block relative">
+         <div className="absolute inset-0 bg-zinc-900/10" />
+         <div className="relative z-20 flex items-center text-lg font-medium text-foreground p-10">
+            <LandPlot className="mr-2 h-6 w-6" />
+            Kenya Land Trust
+        </div>
+         <div className="relative z-20 h-full flex flex-col justify-center items-center p-10 text-center">
+            <h2 className="text-4xl font-bold tracking-tight text-primary">Trust in Every Transaction</h2>
+            <p className="mt-4 text-lg text-foreground/80 max-w-md">
+                A secure and transparent marketplace for land in Kenya, backed by verification and community trust.
+            </p>
+        </div>
+        <div className="relative z-20 mt-auto p-10">
+            <blockquote className="space-y-2 text-foreground/90">
+                <p className="text-lg">
+                    "Transparency and trust are the cornerstones of every successful land transaction. We are here to build that foundation with you."
+                </p>
+                <footer className="text-sm">The Kenya Land Trust Team</footer>
+            </blockquote>
+        </div>
+      </div>
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
@@ -259,21 +274,6 @@ export default function SignupPage() {
               Log in
             </Link>
           </div>
-        </div>
-      </div>
-       <div className="hidden bg-muted lg:block relative">
-         <div className="absolute inset-0 bg-zinc-900" />
-         <div className="relative z-20 flex items-center text-lg font-medium text-white p-10">
-            <LandPlot className="mr-2 h-6 w-6" />
-            Kenya Land Trust
-        </div>
-        <div className="relative z-20 mt-auto p-10">
-            <blockquote className="space-y-2 text-white">
-                <p className="text-lg">
-                    "Transparency and trust are the cornerstones of every successful land transaction. We are here to build that foundation with you."
-                </p>
-                <footer className="text-sm">The Kenya Land Trust Team</footer>
-            </blockquote>
         </div>
       </div>
     </div>

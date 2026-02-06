@@ -55,7 +55,6 @@ export function Header() {
 
   const handleLogout = async () => {
     await auth.signOut();
-    // Signal backend to clear the session cookie
     await fetch('/api/auth/session', { method: 'DELETE' });
     router.push('/');
     router.refresh();
@@ -63,7 +62,6 @@ export function Header() {
 
   const navLinks = [
     { href: '/', label: 'Home' },
-    // Conditionally show Admin link
     ...(userProfile?.role === 'ADMIN' ? [{ href: '/admin', label: 'Admin' }] : []),
   ];
 
@@ -181,7 +179,6 @@ export function Header() {
                         </SheetClose>
 
                         {user && userProfile ? (
-                        // Logged-in user links
                         <>
                             {userProfile.role === 'ADMIN' && (
                                 <SheetClose asChild>
@@ -207,7 +204,9 @@ export function Header() {
                     <div className="mt-auto pt-6">
                         <Separator className="mb-4" />
                         {user ? (
-                            <Button variant="outline" onClick={handleLogout} className="w-full">Log out</Button>
+                            <SheetClose asChild>
+                                <Button variant="outline" onClick={handleLogout} className="w-full">Log out</Button>
+                            </SheetClose>
                         ) : (
                             <div className="flex flex-col gap-4">
                                 <SheetClose asChild><Button asChild variant="outline" className="w-full"><Link href="/login">Log In</Link></Button></SheetClose>

@@ -64,4 +64,8 @@
   body {
     @apply bg-background text-foreground;
   }
+  input[aria-invalid='true'],
+  textarea[aria-invalid='true'] {
+    @apply border-destructive;
+  }
 }

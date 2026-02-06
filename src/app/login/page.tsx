@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, type User } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, type User, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff, LandPlot } from 'lucide-react';
 import Link from 'next/link';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 const GoogleIcon = () => (
@@ -40,6 +41,7 @@ const GoogleIcon = () => (
 const formSchema = z.object({
   email: z.string().email('Invalid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
+  rememberMe: z.boolean().default(true),
 });
 
 function getFirebaseAuthErrorMessage(errorCode: string): string {
@@ -71,14 +73,12 @@ export default function LoginPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: '', password: '', rememberMe: true },
   });
   
-  // Common function to handle successful login flow
   const handleLoginSuccess = async (user: User) => {
     const idToken = await user.getIdToken();
 
-    // Set session cookie
     const response = await fetch('/api/auth/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -113,6 +113,7 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
+      await setPersistence(auth, values.rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       await handleLoginSuccess(userCredential.user);
     } catch (error: any) {
@@ -130,10 +131,10 @@ export default function LoginPage() {
     setIsGoogleSubmitting(true);
     try {
         const provider = new GoogleAuthProvider();
+        await setPersistence(auth, browserLocalPersistence); // Google sign-in always uses local persistence
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Check if user exists in Firestore, if not, create a document
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
@@ -144,7 +145,7 @@ export default function LoginPage() {
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 phone: user.phoneNumber || null,
-                role: 'BUYER', // Default role for new sign-ups
+                role: 'BUYER',
                 verified: false,
                 createdAt: serverTimestamp(),
             });
@@ -165,6 +166,27 @@ export default function LoginPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-[calc(100vh-4rem)] lg:grid-cols-2 xl:min-h-[calc(100vh-4rem)]">
+      <div className="hidden bg-muted lg:block relative">
+         <div className="absolute inset-0 bg-zinc-900/10" />
+         <div className="relative z-20 flex items-center text-lg font-medium text-foreground p-10">
+            <LandPlot className="mr-2 h-6 w-6" />
+            Kenya Land Trust
+        </div>
+         <div className="relative z-20 h-full flex flex-col justify-center items-center p-10 text-center">
+            <h2 className="text-4xl font-bold tracking-tight text-primary">Trust in Every Transaction</h2>
+            <p className="mt-4 text-lg text-foreground/80 max-w-md">
+                A secure and transparent marketplace for land in Kenya, backed by verification and community trust.
+            </p>
+        </div>
+        <div className="relative z-20 mt-auto p-10">
+            <blockquote className="space-y-2 text-foreground/90">
+                <p className="text-lg">
+                    "Transparency and trust are the cornerstones of every successful land transaction. We are here to build that foundation with you."
+                </p>
+                <footer className="text-sm">The Kenya Land Trust Team</footer>
+            </blockquote>
+        </div>
+      </div>
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
@@ -192,15 +214,7 @@ export default function LoginPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                         <div className="flex items-center">
-                            <FormLabel>Password</FormLabel>
-                            <Link
-                                href="/forgot-password"
-                                className="ml-auto inline-block text-sm underline"
-                            >
-                                Forgot your password?
-                            </Link>
-                        </div>
+                         <FormLabel>Password</FormLabel>
                         <div className="relative">
                           <FormControl>
                             <Input
@@ -222,6 +236,32 @@ export default function LoginPage() {
                       </FormItem>
                     )}
                   />
+                  <div className="flex items-center justify-between">
+                     <FormField
+                        control={form.control}
+                        name="rememberMe"
+                        render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                            <FormControl>
+                            <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                            Remember me
+                            </FormLabel>
+                        </FormItem>
+                        )}
+                    />
+                    <Link
+                        href="/forgot-password"
+                        className="inline-block text-sm underline"
+                    >
+                        Forgot your password?
+                    </Link>
+                  </div>
+
                   <Button variant="accent" type="submit" className="w-full" disabled={isSubmitting || isGoogleSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Login
@@ -239,21 +279,6 @@ export default function LoginPage() {
               Sign up
             </Link>
           </div>
-        </div>
-      </div>
-      <div className="hidden bg-muted lg:block relative">
-         <div className="absolute inset-0 bg-zinc-900" />
-         <div className="relative z-20 flex items-center text-lg font-medium text-white p-10">
-            <LandPlot className="mr-2 h-6 w-6" />
-            Kenya Land Trust
-        </div>
-        <div className="relative z-20 mt-auto p-10">
-            <blockquote className="space-y-2 text-white">
-                <p className="text-lg">
-                    "Transparency and trust are the cornerstones of every successful land transaction. We are here to build that foundation with you."
-                </p>
-                <footer className="text-sm">The Kenya Land Trust Team</footer>
-            </blockquote>
         </div>
       </div>
     </div>
