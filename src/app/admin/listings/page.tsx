@@ -19,6 +19,7 @@ import Link from "next/link";
 
 export default function AdminListingsPage() {
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +33,7 @@ export default function AdminListingsPage() {
     setLoading(true);
     try {
       const res = await searchListingsAction({
-        query: query || undefined,
+        query: debouncedQuery || undefined,
         status: statusFilter as any,
         limit: pageSize,
         startAfter: opts.startAfter || undefined,
@@ -55,11 +56,16 @@ export default function AdminListingsPage() {
   };
 
   useEffect(() => {
+    const handle = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(handle);
+  }, [query]);
+
+  useEffect(() => {
     // initial load / refetch on filter change
     setSelected({});
     setLastVisibleId(null);
     fetchListings({ append: false });
-  }, [query, statusFilter]);
+  }, [debouncedQuery, statusFilter]);
 
   const toggleSelect = (id: string) => {
     setSelected((s) => ({ ...s, [id]: !s[id] }));
