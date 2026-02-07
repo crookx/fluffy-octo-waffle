@@ -9,6 +9,7 @@ export const runtime = 'nodejs';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('__session')?.value;
+  const isDev = process.env.NODE_ENV === 'development';
   
   console.log(`[Middleware] ${request.method} ${pathname} - Session Cookie: ${sessionCookie ? '[present]' : '[missing]'}`);
 

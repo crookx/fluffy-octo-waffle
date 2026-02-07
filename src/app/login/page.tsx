@@ -115,8 +115,31 @@ export default function LoginPage() {
       toast({ title: 'Login Successful', description: "Welcome back!" });
       
       const requestedRedirect = searchParams.get('redirect');
-      // Use window.location.assign for a full navigation to ensure the new cookie is sent.
-      window.location.assign(requestedRedirect || '/');
+
+      // If an explicit redirect was requested (via middleware), follow it.
+      if (requestedRedirect) {
+        window.location.assign(requestedRedirect);
+        return;
+      }
+
+      // No explicit redirect provided — query server for session/role and send
+      // user to a sensible default based on role. Include credentials so
+      // the newly-set session cookie is sent with the request.
+      try {
+        const sessionResp = await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
+        if (sessionResp.ok) {
+          const data = await sessionResp.json();
+          const role = data.role ?? 'BUYER';
+          const redirectTarget = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/dashboard' : '/';
+          window.location.assign(redirectTarget);
+          return;
+        }
+      } catch (err) {
+        console.warn('[Login] unable to fetch session after creating cookie, falling back to root', err);
+      }
+
+      // Fallback
+      window.location.assign('/');
 
     } catch (err: any) {
       console.error('[Login] handleLoginSuccess error:', err);

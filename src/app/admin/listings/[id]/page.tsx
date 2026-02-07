@@ -11,8 +11,9 @@ import { AiTools } from './_components/ai-tools';
 import { AdminPage } from '../../_components/admin-page';
 
 
-export default async function AdminReviewPage({ params }: { params: { id: string } }) {
-  const listing = await getListingById(params.id);
+export default async function AdminReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const listing = await getListingById(id);
 
   if (!listing) {
     notFound();

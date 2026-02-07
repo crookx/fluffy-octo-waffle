@@ -4,11 +4,11 @@ import { AdminNav } from './_components/admin-nav';
 
 export default function AdminLayout({ children }: PropsWithChildren) {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="w-full h-full">
       <Sidebar>
         <AdminNav />
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="w-full h-full flex flex-col overflow-hidden">
         {children}
       </SidebarInset>
     </SidebarProvider>

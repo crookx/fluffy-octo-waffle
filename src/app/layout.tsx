@@ -23,14 +23,14 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body
         className={cn(
-          'relative h-full font-sans antialiased',
+          'relative h-full w-full font-sans antialiased',
           inter.variable
         )}
       >
         <AuthProvider>
-          <div className="flex min-h-screen flex-col">
+          <div className="flex h-full w-full flex-col">
             <Header />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 w-full overflow-hidden">{children}</main>
             <Footer />
           </div>
           <Toaster />

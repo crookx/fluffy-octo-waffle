@@ -1,7 +1,17 @@
+'use client';
+
 import Link from 'next/link';
 import { LandPlot } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export function Footer() {
+  const pathname = usePathname();
+  
+  // Hide footer on all admin routes
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer className="border-t bg-secondary">
       <div className="container mx-auto max-w-7xl px-4 py-8">
