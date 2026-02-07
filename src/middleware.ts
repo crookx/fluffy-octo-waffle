@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { adminAuth, adminDb } from './lib/firebase-admin';
-import { cookies } from 'next/headers';
 
 // Force the middleware to run on the Node.js runtime
 export const runtime = 'nodejs';
@@ -9,8 +8,8 @@ export const runtime = 'nodejs';
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const cookiesStore = await cookies();
-  const sessionCookie = cookiesStore.get('__session')?.value;
+  const sessionCookie = request.cookies.get('__session')?.value;
+  const isDev = process.env.NODE_ENV !== 'production';
   
   console.log(`[Middleware] ${request.method} ${pathname} - Session Cookie: ${sessionCookie ? '[present]' : '[missing]'}`);
   
@@ -31,8 +30,25 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
       }
     } catch (e) {
+      console.warn('[Middleware] Auth page session verification failed:', e);
       // If verification fails, clear cookie and show login/signup as usual
       const response = NextResponse.next();
+      if (isDev) {
+        response.headers.set(
+          'Content-Security-Policy',
+          [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: https:",
+            "connect-src 'self' https: ws: wss:",
+            "font-src 'self' data: https:",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "frame-ancestors 'self'",
+          ].join('; ')
+        );
+      }
       response.cookies.set('__session', '', { maxAge: 0 });
       return response;
     }
@@ -55,7 +71,24 @@ export async function middleware(request: NextRequest) {
         console.log(`[Middleware] ${pathname} requires auth but no session cookie found, redirecting to /login`);
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
+        const response = NextResponse.redirect(loginUrl);
+        if (isDev) {
+          response.headers.set(
+            'Content-Security-Policy',
+            [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "connect-src 'self' https: ws: wss:",
+              "font-src 'self' data: https:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "frame-ancestors 'self'",
+            ].join('; ')
+          );
+        }
+        return response;
       }
 
       // Verify the session cookie and get the user's role
@@ -78,16 +111,50 @@ export async function middleware(request: NextRequest) {
         }
 
       } catch (error) {
+        console.warn('[Middleware] Protected route session verification failed:', error);
         // Invalid session cookie, clear it and redirect to login
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         const response = NextResponse.redirect(loginUrl);
+        if (isDev) {
+          response.headers.set(
+            'Content-Security-Policy',
+            [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "connect-src 'self' https: ws: wss:",
+              "font-src 'self' data: https:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "frame-ancestors 'self'",
+            ].join('; ')
+          );
+        }
         response.cookies.set('__session', '', { maxAge: 0 });
         return response;
       }
   }
-  
-  return NextResponse.next();
+
+  const response = NextResponse.next();
+  if (isDev) {
+    response.headers.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        "connect-src 'self' https: ws: wss:",
+        "font-src 'self' data: https:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "frame-ancestors 'self'",
+      ].join('; ')
+    );
+  }
+  return response;
 }
 
 export const config = {
