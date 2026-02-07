@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,34 +71,6 @@ export default function LoginPage() {
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    let isActive = true;
-    const checkExistingSession = async () => {
-      try {
-        const response = await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
-        if (!response.ok) return;
-        const data = await response.json();
-        if (!isActive || !data?.authenticated) return;
-        
-        const requestedRedirect = searchParams.get('redirect');
-        if (requestedRedirect) {
-          router.replace(requestedRedirect);
-          return;
-        }
-
-        const role = data.role ?? 'BUYER';
-        const redirectTarget = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/dashboard' : '/';
-        router.replace(redirectTarget);
-      } catch (error) {
-        console.warn('[Login] Unable to check existing session:', error);
-      }
-    };
-    checkExistingSession();
-    return () => {
-      isActive = false;
-    };
-  }, [router, searchParams]);
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '', password: '', rememberMe: true },
@@ -106,10 +78,8 @@ export default function LoginPage() {
   
   const handleLoginSuccess = async (user: User) => {
     try {
-      console.log('[Login] Starting handleLoginSuccess for user:', user.uid);
       const idToken = await user.getIdToken();
 
-      console.log('[Login] Got idToken, calling /api/auth/session to create cookie.');
       const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -123,8 +93,9 @@ export default function LoginPage() {
       
       toast({ title: 'Login Successful', description: "Welcome back!" });
       
-      console.log('[Login] Session cookie created request sent. Reloading page to apply session.');
-      window.location.reload();
+      const requestedRedirect = searchParams.get('redirect');
+      // Use window.location.assign for a full navigation to ensure the new cookie is sent.
+      window.location.assign(requestedRedirect || '/');
 
     } catch (err: any) {
       console.error('[Login] handleLoginSuccess error:', err);
@@ -135,13 +106,10 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      console.log('[Login] Form submitted');
       await setPersistence(auth, values.rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      console.log('[Login] User authenticated, calling handleLoginSuccess');
       await handleLoginSuccess(userCredential.user);
     } catch (error: any) {
-      console.error('[Login] onSubmit error:', error);
       const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
       toast({
         variant: 'destructive',

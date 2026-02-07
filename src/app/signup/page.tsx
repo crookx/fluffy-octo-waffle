@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff, LandPlot } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 const GoogleIcon = () => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4">
@@ -60,32 +59,10 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
 
 
 export default function SignupPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    let isActive = true;
-    const checkExistingSession = async () => {
-      try {
-        const response = await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
-        if (!response.ok) return;
-        const data = await response.json();
-        if (!isActive || !data?.authenticated) return;
-        const role = data.role ?? 'BUYER';
-        const redirectTarget = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/dashboard' : '/';
-        router.replace(redirectTarget);
-      } catch (error) {
-        console.warn('[Signup] Unable to check existing session:', error);
-      }
-    };
-    checkExistingSession();
-    return () => {
-      isActive = false;
-    };
-  }, [router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
