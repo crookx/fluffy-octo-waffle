@@ -183,7 +183,7 @@ export default function AdminInboxPage() {
       description="Review user messages and listing reports."
       breadcrumbs={[{ href: '/admin', label: 'Dashboard' }, { href: '/admin/inbox', label: 'Inbox' }]}
     >
-        <Tabs defaultValue={mainTab} onValueChange={handleTabChange} className="w-full">
+        <Tabs value={mainTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="messages">Contact Messages</TabsTrigger>
                 <TabsTrigger value="reports">Listing Reports</TabsTrigger>
