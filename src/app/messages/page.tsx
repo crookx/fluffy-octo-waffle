@@ -1,5 +1,7 @@
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
+import Link from 'next/link';
 
 export default function MessagesPage() {
   return (
@@ -9,6 +11,9 @@ export default function MessagesPage() {
       <p className="mt-2 text-muted-foreground">
         Choose from your existing conversations on the left, or start a new one by contacting a seller on a listing page.
       </p>
+      <Button asChild variant="outline" className="mt-6">
+        <Link href="/listings">Browse Listings</Link>
+      </Button>
     </Card>
   );
 }

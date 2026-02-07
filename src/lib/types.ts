@@ -92,6 +92,7 @@ export type Conversation = {
     senderId: string;
   } | null;
   updatedAt: any; // or Date
+  status?: 'new' | 'responded' | 'closed';
 };
 
 export type Message = {

@@ -67,7 +67,7 @@ export async function middleware(request: NextRequest) {
   const generalProtectedPages = ['/messages', '/profile', '/favorites', '/onboarding'];
 
   // All pages that require a SELLER or ADMIN role
-  const sellerPages = ['/dashboard', '/listings/new'];
+  const sellerPages = ['/dashboard', '/listings/new', '/settings'];
   const editListingPattern = /^\/listings\/[^/]+\/edit$/;
 
   const isGeneralProtectedRoute = generalProtectedPages.some(p => pathname.startsWith(p));

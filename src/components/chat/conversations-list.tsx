@@ -12,6 +12,8 @@ import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import { Badge } from '@/components/ui/badge';
+import { conversationStatusLabel, getConversationStatus } from '@/lib/conversation-status';
 
 export function ConversationsList() {
     const { user, loading: authLoading } = useAuth();
@@ -65,16 +67,17 @@ export function ConversationsList() {
         <div className="h-full overflow-y-auto">
             <h2 className="p-4 text-lg font-semibold border-b">Chats</h2>
             {conversations.length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground">No conversations yet.</p>
+                <p className="p-4 text-sm text-muted-foreground">No conversations yet. Buyer messages will appear here.</p>
             ) : (
                 <nav className="flex flex-col">
                     {conversations.map(convo => {
                         const otherParticipant = getOtherParticipant(convo);
                         if (!otherParticipant) return null;
                         const isActive = pathname.includes(convo.id);
+                        const status = getConversationStatus(convo, user?.uid);
                         return (
                             <Link href={`/messages/${convo.id}`} key={convo.id} className={cn(
-                                "flex items-center gap-3 p-4 border-b hover:bg-muted/50",
+                                "flex items-center gap-3 p-4 border-b transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                                 isActive && "bg-secondary"
                             )}>
                                 <div className="relative h-12 w-12 flex-shrink-0">
@@ -88,11 +91,16 @@ export function ConversationsList() {
                                 <div className="flex-1 overflow-hidden">
                                     <div className="flex justify-between items-start gap-2">
                                         <p className="font-semibold truncate">{convo.listingTitle}</p>
-                                        {convo.lastMessage?.timestamp && (
-                                            <p className="text-xs text-muted-foreground flex-shrink-0">
-                                                {formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: true })}
-                                            </p>
-                                        )}
+                                        <div className="flex flex-col items-end gap-1">
+                                            <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                                                {conversationStatusLabel[status]}
+                                            </Badge>
+                                            {convo.lastMessage?.timestamp && (
+                                                <p className="text-xs text-muted-foreground flex-shrink-0">
+                                                    {formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: true })}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                     <p className="text-sm text-muted-foreground truncate">
                                         With: {otherParticipant.displayName}

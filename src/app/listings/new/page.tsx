@@ -25,6 +25,8 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ToastAction } from '@/components/ui/toast';
 import { FileDragAndDrop } from '@/components/file-drag-and-drop';
+import { Label } from '@/components/ui/label';
+import { SellerPage } from '@/components/seller/seller-page';
 
 // Dynamically import ListingLocationPicker to avoid Leaflet window access during SSR
 const ListingLocationPicker = dynamic(() => import('@/components/listing-location-picker').then(mod => ({ default: mod.ListingLocationPicker })), {
@@ -167,17 +169,21 @@ export default function NewListingPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl py-10">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create a New Listing</CardTitle>
-          <CardDescription>
-            Fill in the details of your property. It will be reviewed by an admin before being made public.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+    <SellerPage
+      title="Create Listing"
+      description="Fill in the details of your property. It will be reviewed by an admin before being made public."
+    >
+      <div className="max-w-3xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Create a New Listing</CardTitle>
+            <CardDescription>
+              Provide accurate details to speed up review and build buyer trust.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* Basic Info */}
               <FormField
                 control={form.control}
@@ -346,10 +352,11 @@ export default function NewListingPage() {
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? ( <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting... </> ) : ( 'Submit for Review' )}
               </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    </SellerPage>
   );
 }

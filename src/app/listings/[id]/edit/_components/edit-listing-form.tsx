@@ -26,6 +26,7 @@ import type { Listing } from '@/lib/types';
 import Image from 'next/image';
 import { ListingLocationPicker } from '@/components/listing-location-picker';
 import { FileDragAndDrop } from '@/components/file-drag-and-drop';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
@@ -144,17 +145,16 @@ export function EditListingForm({ listing }: { listing: Listing }) {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl py-10">
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Listing</CardTitle>
-          <CardDescription>
-            Update the details of your property. Your listing will be re-submitted for review after saving changes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+    <Card>
+      <CardHeader>
+        <CardTitle>Edit Listing</CardTitle>
+        <CardDescription>
+          Update the details of your property. Your listing will be re-submitted for review after saving changes.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
                 control={form.control}
                 name="title"
@@ -344,10 +344,9 @@ export function EditListingForm({ listing }: { listing: Listing }) {
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? ( <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving... </> ) : ( 'Save Changes' )}
               </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }
