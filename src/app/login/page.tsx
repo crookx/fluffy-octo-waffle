@@ -63,6 +63,40 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
     }
 }
 
+// Helper function to validate and compute redirect (client-side, no Server Action needed)
+function computeRedirectUrl(
+  userRole: string,
+  requestedRedirect: string | null,
+  fallbackRedirect: string
+): string {
+  if (!requestedRedirect) {
+    return fallbackRedirect;
+  }
+
+  try {
+    const redirectPath = new URL(requestedRedirect, 'http://localhost').pathname;
+    const isAdminRoute = redirectPath.startsWith('/admin');
+    const isSellerRoute = 
+      ['/dashboard', '/listings/new'].some(p => redirectPath.startsWith(p)) || 
+      /^\/listings\/[^/]+\/edit$/.test(redirectPath);
+
+    // Only allow redirect if user has permission
+    if (isAdminRoute && userRole !== 'ADMIN') {
+      console.log('[Login] User not admin, using fallback');
+      return fallbackRedirect;
+    }
+    if (isSellerRoute && userRole !== 'SELLER' && userRole !== 'ADMIN') {
+      console.log('[Login] User not seller, using fallback');
+      return fallbackRedirect;
+    }
+    // If no restriction or user has permission, allow the redirect
+    return requestedRedirect;
+  } catch (err) {
+    console.error('[Login] Error parsing redirect URL:', err);
+    return fallbackRedirect;
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -114,9 +148,8 @@ export default function LoginPage() {
           throw new Error(errorData.message || 'Failed to create session on the server.');
       }
 
-      console.log('[Login] Session cookie created, waiting 500ms for browser to process Set-Cookie');
-      // Wait longer for the cookie to be fully set in the browser
-      // The browser needs time to process the Set-Cookie header from the response
+      console.log('[Login] Session cookie created, waiting for browser to process Set-Cookie');
+      // Wait for the cookie to be fully set in the browser
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Verify the session was actually created and is accessible
@@ -126,7 +159,7 @@ export default function LoginPage() {
         try {
           const verifyResponse = await fetch('/api/auth/session', {
             method: 'GET',
-            credentials: 'include', // Include cookies in the request
+            credentials: 'include',
           });
           if (verifyResponse.ok) {
             console.log('[Login] Session verified on attempt', i + 1);
@@ -143,11 +176,12 @@ export default function LoginPage() {
         console.warn('[Login] Session verification failed, but proceeding anyway');
       }
 
-      // Wait another moment for good measure before navigation
+      // Wait a moment before navigation to ensure cookie is fully set
       await new Promise(resolve => setTimeout(resolve, 200));
 
       toast({ title: 'Login Successful', description: "Welcome back!" });
       
+      // Determine redirect based on user's role
       let fallbackRedirect = '/';
       let userRole = 'BUYER';
       try {
@@ -167,26 +201,12 @@ export default function LoginPage() {
         // Fallback already set to '/'
       }
       
-      // Validate the redirect URL against the user's role
-      let redirectUrl = searchParams.get('redirect') || fallbackRedirect;
-      console.log('[Login] Redirect URL from params:', searchParams.get('redirect'), 'Fallback:', fallbackRedirect, 'Final:', redirectUrl);
+      // Compute final redirect URL (all client-side, no Server Action)
+      const requestedRedirect = searchParams.get('redirect');
+      const finalRedirectUrl = computeRedirectUrl(userRole, requestedRedirect, fallbackRedirect);
       
-      const redirectPath = new URL(redirectUrl, 'http://localhost').pathname;
-      
-      // Check if user has access to the redirect URL
-      const isAdminRoute = redirectPath.startsWith('/admin');
-      const isSellerRoute = ['/dashboard', '/listings/new'].some(p => redirectPath.startsWith(p)) || /^\/listings\/[^/]+\/edit$/.test(redirectPath);
-      
-      if (isAdminRoute && userRole !== 'ADMIN') {
-        console.log('[Login] User not admin, using fallback');
-        redirectUrl = fallbackRedirect;
-      } else if (isSellerRoute && userRole !== 'SELLER' && userRole !== 'ADMIN') {
-        console.log('[Login] User not seller, using fallback');
-        redirectUrl = fallbackRedirect;
-      }
-      
-      console.log('[Login] Final redirect URL:', redirectUrl);
-      router.push(redirectUrl);
+      console.log('[Login] Final redirect URL:', finalRedirectUrl);
+      router.push(finalRedirectUrl);
       console.log('[Login] router.push called');
     } catch (err: any) {
       console.error('[Login] handleLoginSuccess error:', err);
@@ -218,7 +238,7 @@ export default function LoginPage() {
     setIsGoogleSubmitting(true);
     try {
         const provider = new GoogleAuthProvider();
-        await setPersistence(auth, browserLocalPersistence); // Google sign-in always uses local persistence
+        await setPersistence(auth, browserLocalPersistence);
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
