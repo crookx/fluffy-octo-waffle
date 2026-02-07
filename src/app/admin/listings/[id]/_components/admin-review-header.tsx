@@ -104,12 +104,12 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
   };
 
   return (
-    <>
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
       <Select
         value={currentStatus}
         onValueChange={(v: ListingStatus) => setCurrentStatus(v)}
       >
-        <SelectTrigger className="w-[120px]">
+        <SelectTrigger className="w-full sm:w-[120px]">
           <SelectValue placeholder="Set status" />
         </SelectTrigger>
         <SelectContent>
@@ -125,7 +125,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
         value={currentBadge || ''}
         onValueChange={(v: BadgeValue) => setCurrentBadge(v)}
       >
-        <SelectTrigger className="w-[120px]">
+        <SelectTrigger className="w-full sm:w-[120px]">
           <SelectValue placeholder="Set badge" />
         </SelectTrigger>
         <SelectContent>
@@ -136,7 +136,11 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
           ))}
         </SelectContent>
       </Select>
-      <Button onClick={handleSaveClick} disabled={isSaving || !isChanged}>
+      <Button
+        onClick={handleSaveClick}
+        disabled={isSaving || !isChanged}
+        className="w-full sm:w-auto"
+      >
         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Save
       </Button>
@@ -171,7 +175,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       <AlertDialog open={isRejectConfirmOpen} onOpenChange={setRejectConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -196,6 +200,6 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }
