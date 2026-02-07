@@ -77,7 +77,7 @@ export function ConversationsList() {
                         const status = getConversationStatus(convo, user?.uid);
                         return (
                             <Link href={`/messages/${convo.id}`} key={convo.id} className={cn(
-                                "flex items-center gap-3 p-4 border-b hover:bg-muted/50",
+                                "flex items-center gap-3 p-4 border-b transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                                 isActive && "bg-secondary"
                             )}>
                                 <div className="relative h-12 w-12 flex-shrink-0">
