@@ -16,6 +16,12 @@ import { searchListingsAction, bulkUpdateListingStatus } from "@/app/actions";
 import type { Listing } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function AdminListingsPage() {
   const [query, setQuery] = useState("");
@@ -123,21 +129,47 @@ export default function AdminListingsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Listings</CardTitle>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={selectAllOnPage} disabled={listings.length === 0}>
-                Select page
-              </Button>
-              <Button size="sm" variant="ghost" onClick={clearSelection}>
-                Clear
-              </Button>
-              <Button size="sm" onClick={() => handleBulk("approved")} disabled={selectedIds.length === 0}>
-                Approve Selected
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => handleBulk("rejected")} disabled={selectedIds.length === 0}>
-                Reject Selected
-              </Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => handleBulk("approved")} disabled={selectedIds.length === 0}>
+                  Approve Selected
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleBulk("rejected")}
+                  disabled={selectedIds.length === 0}
+                >
+                  Reject Selected
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 sm:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      More actions
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={selectAllOnPage} disabled={listings.length === 0}>
+                      Select page
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={clearSelection} disabled={selectedIds.length === 0}>
+                      Clear selection
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="hidden items-center gap-2 sm:flex">
+                <Button size="sm" variant="outline" onClick={selectAllOnPage} disabled={listings.length === 0}>
+                  Select page
+                </Button>
+                <Button size="sm" variant="ghost" onClick={clearSelection} disabled={selectedIds.length === 0}>
+                  Clear
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
