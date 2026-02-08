@@ -54,9 +54,10 @@ async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['
 export default async function ListingDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const listing = await getListingById(params.id);
+  const { id } = await params;
+  const listing = await getListingById(id);
   const user = await getAuthenticatedUser();
 
   if (!listing) {
@@ -86,7 +87,6 @@ export default async function ListingDetailPage({
   }
 
   const {
-    id,
     title,
     location,
     county,
@@ -212,7 +212,7 @@ export default async function ListingDetailPage({
           {canContact && (
             <Card className="hidden md:block">
               <CardContent className="p-4">
-                <ContactSellerButton listingId={listing.id} />
+                <ContactSellerButton listingId={id} />
               </CardContent>
             </Card>
           )}
@@ -248,7 +248,7 @@ export default async function ListingDetailPage({
       {/* Sticky CTA for Mobile */}
       {canContact && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-10 bg-background/90 p-4 backdrop-blur-sm border-t">
-          <ContactSellerButton listingId={listing.id} />
+          <ContactSellerButton listingId={id} />
         </div>
       )}
     </div>

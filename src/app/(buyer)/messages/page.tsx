@@ -12,7 +12,7 @@ export default function MessagesPage() {
         Choose from your existing conversations on the left, or start a new one by contacting a seller on a listing page.
       </p>
       <Button asChild variant="outline" className="mt-6">
-        <Link href="/listings">Browse Listings</Link>
+        <Link href="/explore">Browse Listings</Link>
       </Button>
     </Card>
   );

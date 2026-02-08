@@ -19,13 +19,14 @@ async function getAuthenticatedUser() {
 }
 
 
-export default async function EditListingPage({ params }: { params: { id: string } }) {
+export default async function EditListingPage({ params }: { params: Promise<{ id: string }> }) {
     const user = await getAuthenticatedUser();
     if (!user) {
         redirect('/login');
     }
 
-    const listing = await getListingById(params.id);
+    const { id } = await params;
+    const listing = await getListingById(id);
 
     if (!listing) {
         notFound();

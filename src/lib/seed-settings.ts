@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: PlatformSettings = {
   platformName: 'Kenya Land Trust',
   contactEmail: 'contact@kenyalandtrust.com',
   supportEmail: 'support@kenyalandtrust.com',
+  supportPhone: '+254 (0) 700 000 000',
   siteDescription: 'A trusted platform for buying and selling land in Kenya with verified listings and secure transactions.',
   maxUploadSizeMB: 50,
   moderationThresholdDays: 30,
@@ -20,6 +21,14 @@ const DEFAULT_SETTINGS: PlatformSettings = {
   maintenanceMessage: '',
   enableUserSignups: true,
   enableListingCreation: true,
+  socialFacebook: 'https://facebook.com/kenyalandtrust',
+  socialTwitter: 'https://twitter.com/kenyalandtrust',
+  socialLinkedin: 'https://linkedin.com/company/kenyalandtrust',
+  trustStats: {
+    totalListings: 10000,
+    totalBuyers: 5000,
+    fraudCasesResolved: 0,
+  },
   updatedAt: FieldValue.serverTimestamp(),
   updatedBy: 'system-init',
 };

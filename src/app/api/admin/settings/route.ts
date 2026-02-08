@@ -10,6 +10,7 @@ const SettingsSchema = z.object({
   platformName: z.string().min(1, 'Platform name is required').max(100),
   contactEmail: z.string().email('Invalid contact email'),
   supportEmail: z.string().email('Invalid support email'),
+  supportPhone: z.string().optional().default(''),
   siteDescription: z.string().min(10, 'Description must be at least 10 characters').max(1000),
   maxUploadSizeMB: z.number().min(1, 'Max upload size must be at least 1 MB').max(1000),
   moderationThresholdDays: z.number().min(1, 'Must be at least 1 day').max(365),
@@ -17,6 +18,14 @@ const SettingsSchema = z.object({
   maintenanceMessage: z.string().optional().default(''),
   enableUserSignups: z.boolean(),
   enableListingCreation: z.boolean(),
+  socialFacebook: z.string().url('Invalid Facebook URL').optional().or(z.literal('')),
+  socialTwitter: z.string().url('Invalid Twitter URL').optional().or(z.literal('')),
+  socialLinkedin: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
+  trustStats: z.object({
+    totalListings: z.number().min(0),
+    totalBuyers: z.number().min(0),
+    fraudCasesResolved: z.number().min(0),
+  }).optional(),
 });
 
 type SettingsValidationInput = z.infer<typeof SettingsSchema>;

@@ -27,6 +27,7 @@ const SettingsSchema = z.object({
   platformName: z.string().min(1, 'Platform name is required').max(100),
   contactEmail: z.string().email('Invalid contact email'),
   supportEmail: z.string().email('Invalid support email'),
+  supportPhone: z.string().optional().default(''),
   siteDescription: z.string().min(10, 'Description must be at least 10 characters').max(1000),
   maxUploadSizeMB: z.coerce.number().min(1, 'Max upload size must be at least 1 MB').max(1000),
   moderationThresholdDays: z.coerce.number().min(1, 'Must be at least 1 day').max(365),
@@ -34,6 +35,14 @@ const SettingsSchema = z.object({
   maintenanceMessage: z.string().optional().default(''),
   enableUserSignups: z.boolean(),
   enableListingCreation: z.boolean(),
+  socialFacebook: z.string().url('Invalid Facebook URL').optional().or(z.literal('')),
+  socialTwitter: z.string().url('Invalid Twitter URL').optional().or(z.literal('')),
+  socialLinkedin: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
+  trustStats: z.object({
+    totalListings: z.coerce.number().min(0),
+    totalBuyers: z.coerce.number().min(0),
+    fraudCasesResolved: z.coerce.number().min(0),
+  }).optional(),
 });
 
 type SettingsFormData = z.infer<typeof SettingsSchema>;
@@ -410,6 +419,178 @@ export function SettingsForm() {
                 )}
               />
             )}
+          </CardContent>
+        </Card>
+
+        {/* Social Media Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Social Media & Branding</CardTitle>
+            <CardDescription>
+              Connect your social media profiles
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="supportPhone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Support Phone Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="+254 (0) 700 000 000"
+                      {...field}
+                      disabled={isSaving}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Phone number displayed in footer and contact pages
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="socialFacebook"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Facebook Profile URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://facebook.com/kenyalandtrust"
+                      {...field}
+                      disabled={isSaving}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Leave empty to hide Facebook link
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="socialTwitter"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Twitter/X Profile URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://twitter.com/kenyalandtrust"
+                      {...field}
+                      disabled={isSaving}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Leave empty to hide Twitter link
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="socialLinkedin"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>LinkedIn Company Page URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://linkedin.com/company/kenyalandtrust"
+                      {...field}
+                      disabled={isSaving}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Leave empty to hide LinkedIn link
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Trust Stats Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Trust & Social Proof</CardTitle>
+            <CardDescription>
+              Display trust metrics in the footer to build buyer confidence
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="trustStats.totalListings"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Total Verified Listings</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      {...field}
+                      disabled={isSaving}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Displayed as "10K+" in footer (e.g., enter 10000)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="trustStats.totalBuyers"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Total Happy Buyers</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      {...field}
+                      disabled={isSaving}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Displayed as "5K+" in footer
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="trustStats.fraudCasesResolved"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fraud Cases Resolved</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      {...field}
+                      disabled={isSaving}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Number of fraud cases successfully resolved (0 for "100% Fraud-Free")
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 

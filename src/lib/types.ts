@@ -106,6 +106,7 @@ export type PlatformSettings = {
   platformName: string;
   contactEmail: string;
   supportEmail: string;
+  supportPhone?: string;
   siteDescription: string;
   maxUploadSizeMB: number;
   moderationThresholdDays: number;
@@ -113,6 +114,14 @@ export type PlatformSettings = {
   maintenanceMessage?: string;
   enableUserSignups: boolean;
   enableListingCreation: boolean;
+  socialFacebook?: string;
+  socialTwitter?: string;
+  socialLinkedin?: string;
+  trustStats?: {
+    totalListings: number;
+    totalBuyers: number;
+    fraudCasesResolved: number;
+  };
   updatedAt?: any; // Firestore timestamp
   updatedBy?: string; // User UID who last updated
 };
