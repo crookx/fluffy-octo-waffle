@@ -43,7 +43,7 @@ nextConfig.headers = async () => {
     "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'sha256-kPx0AsF0oz2kKiZ875xSvv693TBHkQ/0SkMJZnnNpnQ=' https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src *;";
 
   const prodCsp =
-    "default-src 'self'; script-src 'self' https://www.googletagmanager.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firebase.googleapis.com https://firebaseinstallations.googleapis.com https://www.google-analytics.com; img-src 'self' data: https://www.google-analytics.com; frame-ancestors 'none';";
+    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' https://apis.google.com https://www.googletagmanager.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firebaseinstallations.googleapis.com https://www.google-analytics.com; frame-ancestors 'none';";
 
   const value = process.env.NODE_ENV === 'production' ? prodCsp : devCsp;
 
