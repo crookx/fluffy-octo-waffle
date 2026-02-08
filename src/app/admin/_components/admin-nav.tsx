@@ -29,6 +29,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import { Badge } from '@/components/ui/badge';
 
 export function AdminNav() {
   const pathname = usePathname();
@@ -142,7 +143,10 @@ export function AdminNav() {
                     <AvatarFallback>{userProfile?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
-                    <span className="text-sm font-medium truncate">{userProfile.displayName}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium truncate">{userProfile.displayName}</span>
+                      <Badge variant="secondary" className="h-5">Admin</Badge>
+                    </div>
                     <span className="text-xs text-muted-foreground truncate">{userProfile.email}</span>
                 </div>
             </div>
