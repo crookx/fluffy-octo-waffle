@@ -23,8 +23,8 @@ if (!getApps().length) {
       serviceAccount = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
       console.log('Loaded service account from FIREBASE_SERVICE_ACCOUNT_KEY_B64/FIREBASE_SERVICE_ACCOUNT_B64');
     } catch (err: any) {
-      console.error('Invalid FIREBASE_SERVICE_ACCOUNT_KEY_B64:', err.message || err);
-      throw err;
+      console.error('Invalid FIREBASE_SERVICE_ACCOUNT_KEY_B64: will skip this value', err.message || err);
+      serviceAccount = undefined;
     }
   }
 
@@ -34,8 +34,8 @@ if (!getApps().length) {
       serviceAccount = JSON.parse(raw);
       console.log('Loaded service account from FIREBASE_SERVICE_ACCOUNT_KEY or FIREBASE_SERVICE_ACCOUNT');
     } catch (err: any) {
-      console.error('Invalid FIREBASE_SERVICE_ACCOUNT_KEY/FIREBASE_SERVICE_ACCOUNT:', err.message || err);
-      throw err;
+      console.error('Invalid FIREBASE_SERVICE_ACCOUNT_KEY/FIREBASE_SERVICE_ACCOUNT: will skip this value', err.message || err);
+      serviceAccount = undefined;
     }
   }
 
