@@ -53,6 +53,23 @@ import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
 const BADGE_OPTIONS: BadgeValue[] = ["Gold", "Silver", "Bronze"];
+const TRUST_HIGHLIGHTS = [
+  {
+    title: 'Verified Listings',
+    description: 'Every plot is vetted with clear ownership and honest details.',
+    icon: Shield,
+  },
+  {
+    title: 'Trust Badges',
+    description: 'Gold, Silver, and Bronze ratings help you decide with confidence.',
+    icon: BadgeCheck,
+  },
+  {
+    title: 'Guided Buying',
+    description: 'We help you understand zoning, utilities, and next steps.',
+    icon: Award,
+  },
+];
 
 
 export default function ListingsPage() {
@@ -84,6 +101,8 @@ export default function ListingsPage() {
     badges.forEach(b => filters.push({type: 'badge', value: b, label: `${b} Badge`}));
     return filters;
   }, [query, landType, priceRange, areaRange, badges]);
+
+  const listingCountLabel = loading ? 'Loading...' : `${listings.length}${hasMore ? '+' : ''}`;
 
 
   const updateUrlParams = useDebouncedCallback(() => {
@@ -270,15 +289,55 @@ export default function ListingsPage() {
   
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-primary md:text-5xl">
+      <section className="mb-12 rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-accent/10 px-6 py-10 text-center shadow-sm md:px-10">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Trusted land marketplace</p>
+        <h1 className="mt-3 text-4xl font-bold tracking-tight text-primary md:text-5xl">
           Secure Your Piece of Kenya
         </h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-foreground/80">
-          Browse verified land listings with transparent trust signals.
+          Browse verified land listings with transparent trust signals and effortless filtering.
         </p>
-      </div>
-      
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <Button asChild>
+            <Link href="#listings">Browse listings</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/about">How it works</Link>
+          </Button>
+        </div>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl border bg-card/60 px-4 py-3 text-left shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Listings</p>
+            <p className="text-2xl font-semibold text-primary">{listingCountLabel}</p>
+          </div>
+          <div className="rounded-xl border bg-card/60 px-4 py-3 text-left shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Trust badges</p>
+            <p className="text-2xl font-semibold text-primary">3-tier verification</p>
+          </div>
+          <div className="rounded-xl border bg-card/60 px-4 py-3 text-left shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Coverage</p>
+            <p className="text-2xl font-semibold text-primary">Nationwide</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-12 grid gap-6 md:grid-cols-3">
+        {TRUST_HIGHLIGHTS.map((highlight) => {
+          const Icon = highlight.icon;
+          return (
+            <Card key={highlight.title} className="border-muted/60 shadow-sm">
+              <CardHeader className="space-y-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <CardTitle className="text-lg">{highlight.title}</CardTitle>
+                <CardDescription>{highlight.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          );
+        })}
+      </section>
+
       <div className="mb-8 p-6 border rounded-lg bg-card shadow-sm">
         <div className="lg:hidden mb-4">
             <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
@@ -306,6 +365,18 @@ export default function ListingsPage() {
         </div>
       </div>
 
+       <div id="listings" className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-muted-foreground">Results</p>
+            <p className="text-lg font-semibold text-primary">
+              {loading ? 'Fetching listings...' : `Showing ${listings.length} listing${listings.length === 1 ? '' : 's'}`}
+            </p>
+          </div>
+          {activeFilters.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm">Reset Filters</Button>
+          )}
+       </div>
+
        {activeFilters.length > 0 && (
             <div className="mb-4 flex items-center gap-2 flex-wrap">
                 <p className="text-sm font-medium">Applied Filters:</p>
@@ -321,7 +392,6 @@ export default function ListingsPage() {
                         </button>
                     </Badge>
                 ))}
-                <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm">Reset Filters</Button>
             </div>
        )}
 
@@ -400,7 +470,15 @@ export default function ListingsPage() {
       ) : (
         <div className="text-center py-20 rounded-lg border-2 border-dashed">
           <p className="text-muted-foreground text-lg font-medium">No listings found.</p>
-          <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters or search terms.</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Try adjusting your filters or search terms to explore more options.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Button variant="outline" onClick={resetFilters}>Clear filters</Button>
+            <Button asChild>
+              <Link href="/contact">Get help</Link>
+            </Button>
+          </div>
         </div>
       )}
     </div>
