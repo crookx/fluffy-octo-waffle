@@ -31,6 +31,22 @@ export type ListingImage = {
   hint: string;
 };
 
+export type SavedSearch = {
+  id: string;
+  name: string;
+  url: string;
+  createdAt: any; // Firestore timestamp
+  filters: {
+    query?: string;
+    landType?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    minArea?: number;
+    maxArea?: number;
+    badges?: BadgeValue[];
+  };
+};
+
 export type Listing = {
   id: string;
   ownerId: string;

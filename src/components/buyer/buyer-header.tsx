@@ -36,7 +36,6 @@ export function BuyerHeader() {
   const pathname = usePathname();
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
-  const isSeller = userProfile?.role === 'SELLER';
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -50,6 +49,8 @@ export function BuyerHeader() {
     { href: '/trust', label: 'Trust & Verify' },
     { href: '/contact', label: 'Contact Us' },
   ];
+
+  const dashboardUrl = userProfile?.role === 'SELLER' || userProfile?.role === 'ADMIN' ? '/dashboard' : '/buyer/dashboard';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -85,11 +86,10 @@ export function BuyerHeader() {
             <>
               {user && userProfile ? (
                 <>
-                  {isSeller && (
-                    <Button asChild className="hidden lg:inline-flex">
-                      <Link href="/dashboard/listings">Dashboard</Link>
-                    </Button>
-                  )}
+                  <Button asChild className="hidden lg:inline-flex" variant="outline" size="sm">
+                    <Link href={dashboardUrl}>Dashboard</Link>
+                  </Button>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" aria-label="Open user menu">
@@ -103,34 +103,31 @@ export function BuyerHeader() {
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-medium leading-none">{userProfile?.displayName}</p>
-                          <p className="text-xs leading-none text-muted-foreground">{isSeller ? 'Seller Account' : 'Buyer Account'}</p>
+                          <p className="text-xs leading-none text-muted-foreground">{userProfile.role.charAt(0) + userProfile.role.slice(1).toLowerCase()} Account</p>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       
-                      {isSeller ? (
-                        <>
-                          <DropdownMenuItem asChild>
-                            <Link href="/dashboard">
-                              <LayoutDashboard className="mr-2 h-4 w-4" />
-                              Dashboard
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href="/messages">
-                              <MessageSquare className="mr-2 h-4 w-4" />
-                              Messages
-                            </Link>
-                          </DropdownMenuItem>
-                        </>
-                      ) : (
-                        <DropdownMenuItem asChild>
+                      <DropdownMenuItem asChild>
+                        <Link href={dashboardUrl}>
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+
+                       <DropdownMenuItem asChild>
                           <Link href="/favorites">
                             <Heart className="mr-2 h-4 w-4" />
-                            Saved Properties
+                            Favorites
                           </Link>
                         </DropdownMenuItem>
-                      )}
+
+                      <DropdownMenuItem asChild>
+                        <Link href="/messages">
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Messages
+                        </Link>
+                      </DropdownMenuItem>
 
                       <DropdownMenuItem asChild>
                         <Link href="/profile">
@@ -138,12 +135,7 @@ export function BuyerHeader() {
                           Profile
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/settings">
-                          <Settings className="mr-2 h-4 w-4" />
-                          Settings
-                        </Link>
-                      </DropdownMenuItem>
+
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
@@ -214,49 +206,29 @@ export function BuyerHeader() {
                         </div>
                       </div>
 
-                {/* User Actions - Role Based */}
                       <div className="space-y-1">
-                        {isSeller ? (
-                          <>
-                            <SheetClose asChild>
-                              <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
-                                <LayoutDashboard className="h-4 w-4" />
-                                Dashboard
-                              </Link>
-                            </SheetClose>
-                            <SheetClose asChild>
-                              <Link href="/dashboard/listings" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
-                                <Heart className="h-4 w-4" />
-                                My Listings
-                              </Link>
-                            </SheetClose>
-                            <SheetClose asChild>
-                              <Link href="/messages" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
-                                <MessageSquare className="h-4 w-4" />
-                                Messages
-                              </Link>
-                            </SheetClose>
-                          </>
-                        ) : (
-                          <>
-                            <SheetClose asChild>
-                              <Link href="/favorites" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
-                                <Heart className="h-4 w-4" />
-                                Saved Properties
-                              </Link>
-                            </SheetClose>
-                          </>
-                        )}
+                          <SheetClose asChild>
+                            <Link href={dashboardUrl} className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
+                              <LayoutDashboard className="h-4 w-4" />
+                              Dashboard
+                            </Link>
+                          </SheetClose>
+                           <SheetClose asChild>
+                            <Link href="/favorites" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
+                              <Heart className="h-4 w-4" />
+                              Favorites
+                            </Link>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Link href="/messages" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
+                              <MessageSquare className="h-4 w-4" />
+                              Messages
+                            </Link>
+                          </SheetClose>
                         <SheetClose asChild>
                           <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
                             <UserCircle className="h-4 w-4" />
                             Profile
-                          </Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link href="/settings" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
-                            <Settings className="h-4 w-4" />
-                            Settings
                           </Link>
                         </SheetClose>
                       </div>

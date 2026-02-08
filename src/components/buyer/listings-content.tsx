@@ -49,6 +49,7 @@ import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 import { Loader2, Search, SlidersHorizontal, X, LandPlot } from 'lucide-react';
 import { searchListingsAction } from '@/app/actions';
 import type { Listing, BadgeValue } from '@/lib/types';
+import { SaveSearchButton } from './save-search-button';
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
 const BADGE_OPTIONS: BadgeValue[] = ["Gold", "Silver", "Bronze"];
@@ -85,21 +86,32 @@ export function ListingsContent() {
     badges.forEach(b => filters.push({type: 'badge', value: b, label: `${b} Badge`}));
     return filters;
   }, [query, landType, priceRange, areaRange, badges]);
+  
+  const currentFilters = useMemo(() => ({
+    query: query || undefined,
+    landType: landType || undefined,
+    minPrice: priceRange[0],
+    maxPrice: priceRange[1],
+    minArea: areaRange[0],
+    maxArea: areaRange[1],
+    badges: badges.length > 0 ? badges : undefined,
+  }), [query, landType, priceRange, areaRange, badges]);
 
   const listingCountLabel = loading ? 'Loading...' : `${listings.length}${hasMore ? '+' : ''}`;
 
   const updateUrlParams = useDebouncedCallback(() => {
-    const params = new URLSearchParams();
-    if (query) params.set('query', query);
-    if (landType) params.set('landType', landType);
+    const params = new URLSearchParams(window.location.search);
+    if (query) params.set('query', query); else params.delete('query');
+    if (landType) params.set('landType', landType); else params.delete('landType');
     params.set('minPrice', String(priceRange[0]));
     params.set('maxPrice', String(priceRange[1]));
     params.set('minArea', String(areaRange[0]));
     params.set('maxArea', String(areaRange[1]));
-    if (badges.length > 0) params.set('badges', badges.join(','));
+    if (badges.length > 0) params.set('badges', badges.join(',')); else params.delete('badges');
     
     startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`);
+      // Using window.history.pushState to avoid scroll-to-top behavior of router.replace
+      window.history.pushState(null, '', `${pathname}?${params.toString()}`);
     });
   }, 500);
 
@@ -109,19 +121,13 @@ export function ListingsContent() {
     setLandType(params.get('landType') || '');
     setPriceRange([Number(params.get('minPrice') || 0), Number(params.get('maxPrice') || 50000000)]);
     setAreaRange([Number(params.get('minArea') || 0), Number(params.get('maxArea') || 100)]);
-    setBadges(params.get('badges')?.split(',') as BadgeValue[] || []);
+    setBadges(params.get('badges')?.split(',').filter(Boolean) as BadgeValue[] || []);
   }, []);
 
   useEffect(() => {
     setLoading(true);
     const params = {
-      query: query || undefined,
-      landType: landType || undefined,
-      badges: badges.length > 0 ? badges : undefined,
-      minPrice: priceRange[0],
-      maxPrice: priceRange[1],
-      minArea: areaRange[0],
-      maxArea: areaRange[1],
+      ...currentFilters,
       limit: 12,
     };
     
@@ -132,20 +138,14 @@ export function ListingsContent() {
       setLoading(false);
       setIsFilterSheetOpen(false);
     });
-  }, [query, landType, priceRange, areaRange, badges]);
+  }, [currentFilters]);
 
   const handleLoadMore = async () => {
     if (!lastVisibleId || !hasMore) return;
     setLoadingMore(true);
 
     const params = {
-      query: query || undefined,
-      landType: landType || undefined,
-      badges: badges.length > 0 ? badges : undefined,
-      minPrice: priceRange[0],
-      maxPrice: priceRange[1],
-      minArea: areaRange[0],
-      maxArea: areaRange[1],
+      ...currentFilters,
       limit: 12,
       startAfter: lastVisibleId,
     };
@@ -163,8 +163,8 @@ export function ListingsContent() {
     setPriceRange([0, 50000000]);
     setAreaRange([0, 100]);
     setBadges([]);
-    updateUrlParams();
-  }
+    // This will trigger the useEffect for search
+  };
 
   const removeFilter = (type: string, value: any) => {
     if (type === 'query') setQuery('');
@@ -172,7 +172,7 @@ export function ListingsContent() {
     if (type === 'price') setPriceRange([0, 50000000]);
     if (type === 'area') setAreaRange([0, 100]);
     if (type === 'badge') setBadges(badges.filter(b => b !== value));
-    updateUrlParams();
+    // This will trigger the useEffect for search
   }
 
   return (
@@ -189,16 +189,14 @@ export function ListingsContent() {
                 id="search-query"
                 placeholder="e.g., Kajiado, Kitengela, farm..."
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onBlur={updateUrlParams}
-                onKeyDown={(e) => e.key === 'Enter' && updateUrlParams()}
+                onChange={(e) => {setQuery(e.target.value); updateUrlParams()}}
                 className="pl-10"
               />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="land-type">Land Type</Label>
-            <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); updateUrlParams(); }}>
+            <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); }}>
               <SelectTrigger id="land-type">
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
@@ -229,7 +227,6 @@ export function ListingsContent() {
                     onCheckedChange={(checked) => {
                       const newBadges = checked ? [...badges, badge] : badges.filter(b => b !== badge);
                       setBadges(newBadges);
-                      updateUrlParams();
                     }}
                   >
                     {badge}
@@ -248,7 +245,6 @@ export function ListingsContent() {
               <Slider
                 value={priceRange}
                 onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                onValueCommit={updateUrlParams}
                 max={50000000}
                 min={0}
                 step={100000}
@@ -263,7 +259,6 @@ export function ListingsContent() {
               <Slider
                 value={areaRange}
                 onValueChange={(value) => setAreaRange([value[0], value[1]])}
-                onValueCommit={updateUrlParams}
                 max={100}
                 min={0}
                 step={1}
@@ -295,15 +290,14 @@ export function ListingsContent() {
                       id="mobile-search"
                       placeholder="e.g., Kajiado, farm..."
                       value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      onBlur={updateUrlParams}
+                      onChange={(e) => {setQuery(e.target.value); updateUrlParams()}}
                       className="pl-10"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Land Type</Label>
-                  <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); updateUrlParams(); }}>
+                  <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); }}>
                     <SelectTrigger>
                       <SelectValue placeholder="All types" />
                     </SelectTrigger>
@@ -324,7 +318,6 @@ export function ListingsContent() {
                   <Slider
                     value={priceRange}
                     onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                    onValueCommit={updateUrlParams}
                     max={50000000}
                     min={0}
                     step={100000}
@@ -339,7 +332,6 @@ export function ListingsContent() {
                   <Slider
                     value={areaRange}
                     onValueChange={(value) => setAreaRange([value[0], value[1]])}
-                    onValueCommit={updateUrlParams}
                     max={100}
                     min={0}
                     step={1}
@@ -357,7 +349,6 @@ export function ListingsContent() {
                           onChange={(e) => {
                             const newBadges = e.target.checked ? [...badges, badge] : badges.filter(b => b !== badge);
                             setBadges(newBadges);
-                            updateUrlParams();
                           }}
                           className="rounded border-gray-300"
                         />
@@ -377,38 +368,32 @@ export function ListingsContent() {
         </div>
       </div>
 
-      {/* Active Filters Display */}
-      {activeFilters.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            {activeFilters.map((filter, idx) => (
-              <Badge key={idx} variant="secondary" className="gap-2">
-                {filter.label}
-                <button 
-                  onClick={() => removeFilter(filter.type, filter.value)}
-                  className="ml-1 hover:text-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-          {activeFilters.length > 0 && (
-            <div className="text-sm text-muted-foreground">
-              {listings.length === 0 && !loading ? (
-                'No listings match your filters.'
-              ) : (
-                `Showing ${listingCountLabel} propert${listings.length === 1 ? 'y' : 'ies'}`
-              )}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Active Filters Display */}
+        {activeFilters.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium">Active Filters:</p>
+              {activeFilters.map((filter, idx) => (
+                <Badge key={idx} variant="secondary" className="gap-2">
+                  {filter.label}
+                  <button 
+                    onClick={() => removeFilter(filter.type, filter.value)}
+                    className="ml-1 hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+                <Button variant="ghost" size="sm" onClick={resetFilters}>Clear all</Button>
             </div>
-          )}
-          {activeFilters.length > 0 && (
-            <Button variant="outline" size="sm" onClick={resetFilters}>
-              Clear All Filters
-            </Button>
-          )}
+          </div>
+        )}
+        <div className="ml-auto">
+          <SaveSearchButton filters={currentFilters} disabled={activeFilters.length === 0} />
         </div>
-      )}
+      </div>
+
 
       {/* Listings Grid */}
       {loading ? (

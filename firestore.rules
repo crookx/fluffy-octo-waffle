@@ -18,6 +18,11 @@ service cloud.firestore {
       match /favorites/{listingId} {
         allow read, write, delete: if request.auth.uid == userId;
       }
+      
+      // Users can manage their own saved searches
+      match /savedSearches/{searchId} {
+        allow read, write, delete: if request.auth.uid == userId;
+      }
     }
 
     // Listings have granular access control

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
-import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing, BadgeValue, ListingImage } from '@/lib/types';
+import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing, BadgeValue, ListingImage, SavedSearch, Conversation } from '@/lib/types';
 import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
 import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
@@ -34,7 +34,7 @@ const generateCoordsFromLocation = (location: string): { latitude: number; longi
 }
 
 
-async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
+export async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role'], displayName: string | null} | null> {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('__session')?.value;
     if (!sessionCookie) return null;
@@ -45,15 +45,11 @@ async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['
         if (!userDoc.exists) return null;
         
         const userProfile = userDoc.data() as UserProfile;
-        return { uid: decodedToken.uid, role: userProfile.role };
+        return { uid: decodedToken.uid, role: userProfile.role, displayName: userProfile.displayName };
     } catch(e) {
         return null;
     }
 }
-
-// NOTE: Removed unused `handleLoginRedirectAction` because it caused
-// UnrecognizedActionError / mismatched server action IDs in development.
-// Redirect logic is handled client-side in `src/app/login/page.tsx`.
 
 // Action to search/filter listings
 export async function searchListingsAction(options: {
@@ -753,10 +749,64 @@ export async function getListingsByIds(ids: string[]): Promise<Listing[]> {
     const listingPromises = ids.map(id => getListingById(id));
     const listings = await Promise.all(listingPromises);
     
-    // Filter out nulls (not found) and non-approved listings
+    // Filter out nulls (not found) and non-approved listings for public view
     return listings.filter((l): l is Listing => l !== null && l.status === 'approved');
 }
 
-    
+export async function saveSearchAction(data: { name: string; filters: SavedSearch['filters'], url: string }) {
+    const authUser = await getAuthenticatedUser();
+    if (!authUser) {
+        throw new Error('Authentication required.');
+    }
+    const { name, filters, url } = data;
+    if (!name) {
+        throw new Error('A name for the search is required.');
+    }
+    const savedSearchData = {
+        name,
+        filters,
+        url,
+        createdAt: FieldValue.serverTimestamp(),
+    };
+    await adminDb.collection('users').doc(authUser.uid).collection('savedSearches').add(savedSearchData);
+    revalidatePath('/buyer/dashboard');
+}
 
-    
+export async function deleteSearchAction(searchId: string) {
+    const authUser = await getAuthenticatedUser();
+    if (!authUser) {
+        throw new Error('Authentication required.');
+    }
+    await adminDb.collection('users').doc(authUser.uid).collection('savedSearches').doc(searchId).delete();
+    revalidatePath('/buyer/dashboard');
+}
+
+export async function getSavedSearchesForUser(userId: string): Promise<SavedSearch[]> {
+    const snapshot = await adminDb.collection('users').doc(userId).collection('savedSearches').orderBy('createdAt', 'desc').get();
+    return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+    }) as SavedSearch);
+}
+
+export async function getFavoriteListingsForUser(userId: string, limit: number = 5): Promise<Listing[]> {
+    const favsSnapshot = await adminDb.collection('users').doc(userId).collection('favorites').orderBy('createdAt', 'desc').limit(limit).get();
+    const favIds = favsSnapshot.docs.map(doc => doc.id);
+    if (favIds.length === 0) return [];
+
+    const listings = await getListingsByIds(favIds);
+    return listings;
+}
+
+export async function getRecentConversationsForUser(userId: string, limit: number = 5): Promise<Conversation[]> {
+    const snapshot = await adminDb.collection('conversations')
+        .where('participantIds', 'array-contains', userId)
+        .orderBy('updatedAt', 'desc')
+        .limit(limit)
+        .get();
+        
+    return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+    }) as Conversation);
+}
