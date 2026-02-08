@@ -65,7 +65,7 @@ export async function middleware(request: NextRequest) {
           'Content-Security-Policy',
           [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://apis.google.com https://www.googletagmanager.com",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "connect-src 'self' https: ws: wss:",
@@ -103,7 +103,7 @@ export async function middleware(request: NextRequest) {
             'Content-Security-Policy',
             [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://apis.google.com https://www.googletagmanager.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "connect-src 'self' https: ws: wss:",
@@ -150,7 +150,7 @@ export async function middleware(request: NextRequest) {
             'Content-Security-Policy',
             [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://apis.google.com https://www.googletagmanager.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "connect-src 'self' https: ws: wss:",
@@ -171,7 +171,7 @@ export async function middleware(request: NextRequest) {
       'Content-Security-Policy',
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://apis.google.com https://www.googletagmanager.com",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https:",
         "connect-src 'self' https: ws: wss:",

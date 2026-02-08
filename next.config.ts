@@ -40,10 +40,10 @@ const nextConfig: NextConfig = {
 // stricter policy for production.
 nextConfig.headers = async () => {
   const devCsp =
-    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'sha256-kPx0AsF0oz2kKiZ875xSvv693TBHkQ/0SkMJZnnNpnQ='; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src *;";
+    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'sha256-kPx0AsF0oz2kKiZ875xSvv693TBHkQ/0SkMJZnnNpnQ=' https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src *;";
 
   const prodCsp =
-    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';";
+    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' https://apis.google.com https://www.googletagmanager.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firebaseinstallations.googleapis.com https://www.google-analytics.com; frame-ancestors 'none';";
 
   const value = process.env.NODE_ENV === 'production' ? prodCsp : devCsp;
 
