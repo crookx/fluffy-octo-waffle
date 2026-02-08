@@ -43,25 +43,27 @@ export function SellerNav() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.label}>
-              <Link href={item.href} passHref>
-                <SidebarMenuButton
-                  isActive={
-                    item.href === '/dashboard/listings'
-                      ? isListingsActive
-                      : pathname === item.href || pathname.startsWith(`${item.href}/`)
-                  }
-                  tooltip={item.label}
-                >
-                  <item.icon />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+        <div className="px-2 pb-2 sm:p-0">
+          <SidebarMenu>
+            {navItems.map((item) => (
+              <SidebarMenuItem key={item.label}>
+                <Link href={item.href} passHref>
+                  <SidebarMenuButton
+                    isActive={
+                      item.href === '/dashboard/listings'
+                        ? isListingsActive
+                        : pathname === item.href || pathname.startsWith(`${item.href}/`)
+                    }
+                    tooltip={item.label}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </div>
       </SidebarContent>
       <SidebarFooter>
         <Separator className="my-2" />

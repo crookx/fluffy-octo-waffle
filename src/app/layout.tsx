@@ -30,7 +30,7 @@ export default function RootLayout({
         <AuthProvider>
           <div className="flex h-full w-full flex-col">
             <Header />
-            <main className="flex-1 w-full overflow-hidden">{children}</main>
+            <main className="flex-1 w-full overflow-auto">{children}</main>
             <Footer />
           </div>
           <Toaster />
