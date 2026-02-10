@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,6 +51,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
   const [bulletPoints, setBulletPoints] = useState('');
   const [generatedDescription, setGeneratedDescription] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const draftKey = `seller:edit-listing:draft:${listing.id}`;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,6 +68,68 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       longitude: listing.longitude,
     },
   });
+
+  const watchedValues = form.watch();
+
+  const completeness = useMemo(() => {
+    const checks = [
+      Boolean(watchedValues.title?.trim()),
+      Boolean(watchedValues.location?.trim()),
+      Boolean(watchedValues.county?.trim()),
+      Number(watchedValues.price) > 0,
+      Number(watchedValues.area) > 0,
+      Boolean(watchedValues.landType?.trim()),
+      Boolean(watchedValues.description?.trim() && watchedValues.description.trim().length >= 20),
+      Number(watchedValues.latitude) !== 0 || Number(watchedValues.longitude) !== 0,
+    ];
+    const passed = checks.filter(Boolean).length;
+    return Math.round((passed / checks.length) * 100);
+  }, [watchedValues]);
+
+  useEffect(() => {
+    const draftRaw = localStorage.getItem(draftKey);
+    if (!draftRaw) return;
+    try {
+      const parsed = JSON.parse(draftRaw) as Partial<z.infer<typeof formSchema>>;
+      form.reset({ ...form.getValues(), ...parsed });
+      toast({ title: 'Draft restored', description: 'Recovered unsaved edits from this browser.' });
+    } catch {
+      // ignore invalid draft
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!form.formState.isDirty || isSubmitting) return;
+      const values = form.getValues();
+      const draftPayload = {
+        title: values.title,
+        location: values.location,
+        county: values.county,
+        price: values.price,
+        area: values.area,
+        size: values.size,
+        landType: values.landType,
+        description: values.description,
+        latitude: values.latitude,
+        longitude: values.longitude,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draftPayload));
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [draftKey, form, form.formState.isDirty, isSubmitting]);
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!form.formState.isDirty || isSubmitting) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [form.formState.isDirty, isSubmitting]);
 
   const handleGenerateDescription = async () => {
     if (!bulletPoints) {
@@ -118,6 +181,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       });
       
       const { id } = await editListingAction(listing.id, formData);
+      localStorage.removeItem(draftKey);
       clearInterval(progressInterval);
       setUploadProgress(100);
       
@@ -283,6 +347,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
 
               <Separator />
 
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">Step 3 of 4 · Location</div>
               <ListingLocationPicker initialPosition={{ lat: listing.latitude, lon: listing.longitude }} />
 
               <Separator />
@@ -300,6 +365,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                 </div>
               </div>
 
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">Step 4 of 4 · Documents & review</div>
               <FileDragAndDrop 
                   name="images"
                   label="Upload New Property Images"
@@ -332,6 +398,15 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                 description="You can upload additional evidence documents (title deed, survey maps, etc.). Existing documents will be kept."
                 multiple
               />
+
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <p className="font-semibold">Badge target guidance</p>
+                <ul className="mt-2 list-disc ml-5 space-y-1 text-muted-foreground">
+                  <li><strong>Bronze:</strong> title deed + basic location proof.</li>
+                  <li><strong>Silver:</strong> add updated survey + clearer photos.</li>
+                  <li><strong>Gold:</strong> complete deed, survey, ownership match, and strong photo evidence.</li>
+                </ul>
+              </div>
 
               {isSubmitting && (
                 <div className="space-y-2">

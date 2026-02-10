@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { redirect } from 'next/navigation';
 import type { Conversation, Listing, UserProfile } from '@/lib/types';
-import { ListChecks, MessageSquareText, PlusCircle, TrendingUp } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ListChecks, MessageSquareText, PlusCircle, TrendingUp } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
 import { getConversationStatus, conversationStatusLabel } from '@/lib/conversation-status';
 import { getAuthenticatedUser } from './_lib/auth';
@@ -70,6 +70,23 @@ export default async function SellerDashboard() {
     ...doc.data(),
   })) as Conversation[];
 
+  const needsAttentionItems = [
+    {
+      id: 'rejected',
+      count: statusCounts.rejected,
+      label: 'Rejected listings need fixes before they can go live.',
+      actionHref: '/dashboard/listings?status=rejected',
+      actionLabel: 'Review rejected listings',
+    },
+    {
+      id: 'pending',
+      count: statusCounts.pending,
+      label: 'Pending listings are waiting for admin review. Double-check details in case edits are needed.',
+      actionHref: '/dashboard/listings?status=pending',
+      actionLabel: 'View pending listings',
+    },
+  ].filter((item) => item.count > 0);
+
   return (
     <SellerPage
       title="Dashboard"
@@ -83,6 +100,41 @@ export default async function SellerDashboard() {
         </Button>
       )}
     >
+
+      {needsAttentionItems.length > 0 ? (
+        <Card className="mb-8 border-warning/40 bg-warning/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-warning">
+              <AlertTriangle className="h-5 w-5" />
+              Needs attention
+            </CardTitle>
+            <CardDescription className="text-warning/90">
+              Prioritize these items to keep your listings moving through review.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {needsAttentionItems.map((item) => (
+              <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-warning/30 bg-background/80 p-3">
+                <div>
+                  <p className="font-medium">{item.count} listing(s)</p>
+                  <p className="text-sm text-muted-foreground">{item.label}</p>
+                </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={item.actionHref}>{item.actionLabel}</Link>
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="mb-8 border-success/30 bg-success/10">
+          <CardContent className="flex items-center gap-3 py-4">
+            <CheckCircle2 className="h-5 w-5 text-success" />
+            <p className="text-sm text-success">No urgent listing issues right now. Nice work keeping your workspace healthy.</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Actions */}
       <div className="grid gap-3 md:grid-cols-3 mb-8">
         <Button asChild className="h-14 text-base">

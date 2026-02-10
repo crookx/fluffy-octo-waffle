@@ -14,12 +14,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { formatRelative } from 'date-fns';
 import { redirect } from 'next/navigation';
-import type { UserProfile } from '@/lib/types';
+import type { ListingStatus, UserProfile } from '@/lib/types';
 import { Edit, PlusCircle } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
 import { getAuthenticatedUser } from '../_lib/auth';
 
-export default async function SellerListingsPage() {
+export default async function SellerListingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ status?: string }>;
+}) {
   const user = await getAuthenticatedUser();
 
   if (!user) {
@@ -32,6 +36,26 @@ export default async function SellerListingsPage() {
     redirect('/login');
   }
   const userProfile = userProfileDoc.data() as UserProfile;
+
+  const params = (await searchParams) ?? {};
+  const requestedStatus = params.status;
+  const allowedStatuses: Array<ListingStatus | 'all'> = ['all', 'pending', 'approved', 'rejected'];
+  const activeStatus = allowedStatuses.includes((requestedStatus as ListingStatus | 'all') ?? 'all')
+    ? ((requestedStatus as ListingStatus | 'all') ?? 'all')
+    : 'all';
+
+  const listingCounts = listings.reduce(
+    (acc, listing) => {
+      acc.all += 1;
+      acc[listing.status] += 1;
+      return acc;
+    },
+    { all: 0, pending: 0, approved: 0, rejected: 0 }
+  );
+
+  const visibleListings = activeStatus === 'all'
+    ? listings
+    : listings.filter((listing) => listing.status === activeStatus);
 
   return (
     <SellerPage
@@ -52,10 +76,28 @@ export default async function SellerListingsPage() {
           <CardDescription>Review status, pricing, and edit details.</CardDescription>
         </CardHeader>
         <CardContent>
-          {listings.length > 0 ? (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {[
+              { key: 'all', label: 'All' },
+              { key: 'pending', label: 'Pending' },
+              { key: 'approved', label: 'Approved' },
+              { key: 'rejected', label: 'Rejected' },
+            ].map((item) => {
+              const isActive = activeStatus === item.key;
+              const href = item.key === 'all' ? '/dashboard/listings' : `/dashboard/listings?status=${item.key}`;
+              const count = listingCounts[item.key as keyof typeof listingCounts];
+              return (
+                <Button key={item.key} asChild size="sm" variant={isActive ? 'default' : 'outline'}>
+                  <Link href={href}>{item.label} ({count})</Link>
+                </Button>
+              );
+            })}
+          </div>
+
+          {visibleListings.length > 0 ? (
             <>
               <div className="grid gap-4 md:hidden">
-                {listings.map((listing) => (
+                {visibleListings.map((listing) => (
                   <div key={listing.id} className="rounded-lg border p-4 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <Link href={`/listings/${listing.id}`} className="font-semibold hover:underline">
@@ -88,7 +130,7 @@ export default async function SellerListingsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {listings.map((listing) => (
+                    {visibleListings.map((listing) => (
                       <TableRow key={listing.id}>
                         <TableCell className="font-medium">
                           <Link href={`/listings/${listing.id}`} className="hover:underline">
@@ -120,7 +162,7 @@ export default async function SellerListingsPage() {
             </>
           ) : (
             <div className="text-center py-10 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground">You haven't created any listings yet.</p>
+              <p className="text-muted-foreground">{activeStatus === 'all' ? "You haven't created any listings yet." : `No ${activeStatus} listings yet.`}</p>
               <Button asChild className="mt-4">
                 <Link href="/listings/new">Create Your First Listing</Link>
               </Button>

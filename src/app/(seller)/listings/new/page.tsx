@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -49,6 +49,8 @@ const formSchema = z.object({
   longitude: z.coerce.number(),
 });
 
+const NEW_LISTING_DRAFT_KEY = 'seller:new-listing:draft:v1';
+
 export default function NewListingPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -73,6 +75,69 @@ export default function NewListingPage() {
       longitude: 37.9062,
     },
   });
+
+  const watchedValues = form.watch();
+
+  const completeness = useMemo(() => {
+    const checks = [
+      Boolean(watchedValues.title?.trim()),
+      Boolean(watchedValues.location?.trim()),
+      Boolean(watchedValues.county?.trim()),
+      Number(watchedValues.price) > 0,
+      Number(watchedValues.area) > 0,
+      Boolean(watchedValues.landType?.trim()),
+      Boolean(watchedValues.description?.trim() && watchedValues.description.trim().length >= 20),
+      Number(watchedValues.latitude) !== 0 || Number(watchedValues.longitude) !== 0,
+    ];
+    const passed = checks.filter(Boolean).length;
+    return Math.round((passed / checks.length) * 100);
+  }, [watchedValues]);
+
+  useEffect(() => {
+    const draftRaw = localStorage.getItem(NEW_LISTING_DRAFT_KEY);
+    if (!draftRaw) return;
+    try {
+      const parsed = JSON.parse(draftRaw) as Partial<z.infer<typeof formSchema>>;
+      form.reset({ ...form.getValues(), ...parsed });
+      toast({ title: 'Draft restored', description: 'Recovered your unsaved listing draft from this browser.' });
+    } catch {
+      // ignore invalid draft
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!form.formState.isDirty || isSubmitting) return;
+      const values = form.getValues();
+      const draftPayload = {
+        title: values.title,
+        location: values.location,
+        county: values.county,
+        price: values.price,
+        area: values.area,
+        size: values.size,
+        landType: values.landType,
+        description: values.description,
+        latitude: values.latitude,
+        longitude: values.longitude,
+      };
+      localStorage.setItem(NEW_LISTING_DRAFT_KEY, JSON.stringify(draftPayload));
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [form, isSubmitting, form.formState.isDirty]);
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!form.formState.isDirty || isSubmitting) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [form.formState.isDirty, isSubmitting]);
 
     const handleGenerateDescription = async () => {
     if (!bulletPoints) {
@@ -143,6 +208,7 @@ export default function NewListingPage() {
       }
 
       const { id } = await res.json();
+      localStorage.removeItem(NEW_LISTING_DRAFT_KEY);
       clearInterval(progressInterval);
       setUploadProgress(100);
 
@@ -173,7 +239,8 @@ export default function NewListingPage() {
       title="Create Listing"
       description="Fill in the details of your property. It will be reviewed by an admin before being made public."
     >
-      <div className="max-w-3xl">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="max-w-3xl">
         <Card>
           <CardHeader>
             <CardTitle>Create a New Listing</CardTitle>
@@ -184,6 +251,7 @@ export default function NewListingPage() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">Step 1 of 4 · Details</div>
               {/* Basic Info */}
               <FormField
                 control={form.control}
@@ -221,6 +289,7 @@ export default function NewListingPage() {
                 />
               </div>
 
+               <div className="rounded-md border bg-muted/30 p-3 text-sm">Step 2 of 4 · Property specs</div>
                {/* Property Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <FormField
@@ -319,11 +388,13 @@ export default function NewListingPage() {
 
               <Separator />
 
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">Step 3 of 4 · Location</div>
               <ListingLocationPicker />
 
               <Separator />
 
               {/* File Uploads */}
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">Step 4 of 4 · Documents & review</div>
               <FileDragAndDrop 
                   name="images"
                   label="Property Images"
@@ -356,6 +427,26 @@ export default function NewListingPage() {
             </Form>
           </CardContent>
         </Card>
+      </div>
+
+      <Card className="h-min lg:sticky lg:top-24">
+        <CardHeader>
+          <CardTitle>Listing progress</CardTitle>
+          <CardDescription>Autosaved locally while you draft.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Progress value={completeness} />
+          <p className="text-sm text-muted-foreground">{completeness}% complete</p>
+          <div className="rounded-md border bg-muted/30 p-3 text-sm">
+            <p className="font-semibold">Badge target guidance</p>
+            <ul className="mt-2 list-disc ml-5 space-y-1 text-muted-foreground">
+              <li><strong>Bronze:</strong> title deed + basic location proof.</li>
+              <li><strong>Silver:</strong> add updated survey + clearer photos.</li>
+              <li><strong>Gold:</strong> complete deed, survey, ownership match, and strong photo evidence.</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
       </div>
     </SellerPage>
   );

@@ -18,7 +18,12 @@ import {
   Mountain,
   Square,
   LandPlot,
-  Coins
+  Coins,
+  Copy,
+  Edit,
+  Eye,
+  Share2,
+  Archive
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
@@ -32,6 +37,7 @@ import { DynamicListingCarousel } from '@/components/dynamic-listing-carousel';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 import { FavoriteButton } from '@/components/favorite-button';
+import { Button } from '@/components/ui/button';
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const cookieStore = await cookies();
@@ -53,10 +59,14 @@ async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['
 
 export default async function ListingDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ mode?: string }>;
 }) {
   const { id } = await params;
+  const currentSearchParams = (await searchParams) ?? {};
+  const isBuyerPreviewMode = currentSearchParams.mode === 'buyer';
   const listing = await getListingById(id);
   const user = await getAuthenticatedUser();
 
@@ -126,6 +136,44 @@ export default async function ListingDetailPage({
           .
         </AlertDescription>
       </Alert>
+
+      {isOwner && (
+        <Card className="mb-6 border-primary/30 bg-primary/5">
+          <CardContent className="space-y-4 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold">Quick actions</p>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild size="sm" variant={isBuyerPreviewMode ? 'outline' : 'default'}>
+                  <Link href={`/listings/${id}`}><Eye className="mr-1 h-4 w-4" />Seller view</Link>
+                </Button>
+                <Button asChild size="sm" variant={isBuyerPreviewMode ? 'default' : 'outline'}>
+                  <Link href={`/listings/${id}?mode=buyer`}><Eye className="mr-1 h-4 w-4" />Buyer preview</Link>
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/listings/${id}/edit`}><Edit className="mr-1 h-4 w-4" />Edit</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/listings/new?duplicate=${id}`}><Copy className="mr-1 h-4 w-4" />Duplicate</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/dashboard/listings?status=rejected`}><Archive className="mr-1 h-4 w-4" />Archive prep</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/contact?topic=listing`}><Share2 className="mr-1 h-4 w-4" />Share support link</Link>
+              </Button>
+            </div>
+            {isBuyerPreviewMode && (
+              <p className="text-xs text-muted-foreground">
+                Buyer preview mode hides internal editing intent and lets you review content as a buyer would experience it.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
         {/* Main Content */}
         <div className="md:col-span-2 space-y-8">
