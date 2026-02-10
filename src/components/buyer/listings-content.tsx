@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
 import {
   Sheet,
@@ -46,7 +47,7 @@ import {
 import { TrustBadge } from '@/components/trust-badge';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
-import { Loader2, Search, SlidersHorizontal, X, LandPlot } from 'lucide-react';
+import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown } from 'lucide-react';
 import { searchListingsAction } from '@/app/actions';
 import type { Listing, BadgeValue } from '@/lib/types';
 import { SaveSearchButton } from './save-search-button';
@@ -78,6 +79,7 @@ export function ListingsContent() {
   const [areaRange, setAreaRange] = useState<[number, number]>([0, 100]);
   const [badges, setBadges] = useState<BadgeValue[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const activeFilters = useMemo(() => {
     const filters = [];
@@ -190,91 +192,106 @@ export function ListingsContent() {
       {/* Filter Section */}
       <div className="space-y-4">
         {/* Desktop Filters */}
-        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end p-6 rounded-lg border bg-card">
-          <div className="space-y-2 lg:col-span-3">
-            <Label htmlFor="search-query">Search by Keyword</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input 
-                id="search-query"
-                placeholder="e.g., Kajiado, Kitengela, farm..."
-                value={query}
-                onChange={(e) => {setQuery(e.target.value); updateUrlParams()}}
-                className="pl-10"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="land-type">Land Type</Label>
-            <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); }}>
-              <SelectTrigger id="land-type">
-                <SelectValue placeholder="All types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {LAND_TYPES.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Trust Badge</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  <span>{badges.length > 0 ? `${badges.length} selected` : 'Any Badge'}</span>
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuLabel>Filter by Badge</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {BADGE_OPTIONS.map(badge => (
-                  <DropdownMenuCheckboxItem
-                    key={badge}
-                    checked={badges.includes(badge)}
-                    onCheckedChange={(checked) => {
-                      const newBadges = checked ? [...badges, badge] : badges.filter(b => b !== badge);
-                      setBadges(newBadges);
-                    }}
-                  >
-                    {badge}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <div className="space-y-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Price Range (Ksh)</Label>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{priceRange[0].toLocaleString()}</span>
-                <span>{priceRange[1].toLocaleString()}{priceRange[1] === 50000000 ? '+' : ''}</span>
+        <div className="hidden md:block p-6 rounded-lg border bg-card space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="search-query">Search by Keyword</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="search-query"
+                  placeholder="e.g., Kajiado, Kitengela, farm..."
+                  value={query}
+                  onChange={(e) => {setQuery(e.target.value); updateUrlParams()}}
+                  className="pl-10"
+                />
               </div>
-              <Slider
-                value={priceRange}
-                onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                max={50000000}
-                min={0}
-                step={100000}
-              />
             </div>
             <div className="space-y-2">
-              <Label>Area (Acres)</Label>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{areaRange[0]}</span>
-                <span>{areaRange[1]}{areaRange[1] === 100 ? '+' : ''}</span>
-              </div>
-              <Slider
-                value={areaRange}
-                onValueChange={(value) => setAreaRange([value[0], value[1]])}
-                max={100}
-                min={0}
-                step={1}
-              />
+              <Label htmlFor="land-type">Land Type</Label>
+              <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); }}>
+                <SelectTrigger id="land-type">
+                  <SelectValue placeholder="All types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {LAND_TYPES.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" className="gap-2" onClick={() => setShowAdvancedFilters((prev) => !prev)}>
+                Advanced filters
+                <ChevronDown className={`h-4 w-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+              </Button>
             </div>
           </div>
+
+          <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+            <CollapsibleContent className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
+                <div className="space-y-2">
+                  <Label>Trust Badge</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between">
+                        <span>{badges.length > 0 ? `${badges.length} selected` : 'Any Badge'}</span>
+                        <SlidersHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56">
+                      <DropdownMenuLabel>Filter by Badge</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {BADGE_OPTIONS.map(badge => (
+                        <DropdownMenuCheckboxItem
+                          key={badge}
+                          checked={badges.includes(badge)}
+                          onCheckedChange={(checked) => {
+                            const newBadges = checked ? [...badges, badge] : badges.filter(b => b !== badge);
+                            setBadges(newBadges);
+                          }}
+                        >
+                          {badge}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="space-y-2 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Price Range (Ksh)</Label>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{priceRange[0].toLocaleString()}</span>
+                      <span>{priceRange[1].toLocaleString()}{priceRange[1] === 50000000 ? '+' : ''}</span>
+                    </div>
+                    <Slider
+                      value={priceRange}
+                      onValueChange={(value) => setPriceRange([value[0], value[1]])}
+                      max={50000000}
+                      min={0}
+                      step={100000}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Area (Acres)</Label>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{areaRange[0]}</span>
+                      <span>{areaRange[1]}{areaRange[1] === 100 ? '+' : ''}</span>
+                    </div>
+                    <Slider
+                      value={areaRange}
+                      onValueChange={(value) => setAreaRange([value[0], value[1]])}
+                      max={100}
+                      min={0}
+                      step={1}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         {/* Mobile Filter Sheet */}
