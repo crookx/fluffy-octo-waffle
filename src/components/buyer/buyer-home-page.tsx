@@ -20,7 +20,7 @@ import { HowToFind } from '@/components/buyer/how-to-find';
 import type { Listing, BadgeValue } from '@/lib/types';
 import { useEffect, useState, useTransition, useMemo, Suspense } from 'react';
 import { searchListingsAction } from '@/app/actions';
-import { Loader2, Search, SlidersHorizontal, X, LandPlot } from 'lucide-react';
+import { FileText, Inbox, Loader2, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -293,7 +293,7 @@ function ListingsContent() {
           </div>
           <Slider
             value={priceRange}
-            onValueChange={setPriceRange}
+            onValueChange={(value) => setPriceRange([value[0], value[1]])}
             onValueCommit={updateUrlParams}
             max={50000000}
             min={0}
@@ -311,7 +311,7 @@ function ListingsContent() {
           </div>
           <Slider
             value={areaRange}
-            onValueChange={setAreaRange}
+            onValueChange={(value) => setAreaRange([value[0], value[1]])}
             onValueCommit={updateUrlParams}
             max={100}
             min={0}
@@ -344,74 +344,71 @@ function ListingsContent() {
       )}
 
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* ===== SECTION 4: Badge Legend Explanation ===== */}
         <div className="mb-12 sm:mb-16">
           <BadgeLegend />
         </div>
 
-        {/* ===== SECTION 5: Search & Filter Controls ===== */}
-        <div className="mb-8 p-6 border rounded-lg bg-card shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Refine Your Search</h3>
-            {activeFilters.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm">
-                Clear All Filters
+        <div className="mb-4 lg:hidden">
+          <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="w-full relative">
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                Search & Filter
+                {activeFilters.length > 0 && (
+                  <Badge className="ml-2 bg-primary text-primary-foreground" variant="default">
+                    {activeFilters.length}
+                  </Badge>
+                )}
               </Button>
-            )}
-          </div>
-
-          <div className="lg:hidden mb-4">
-            <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="w-full relative">
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  Search & Filter
-                  {activeFilters.length > 0 && (
-                    <Badge className="ml-2 bg-primary text-primary-foreground" variant="default">
-                      {activeFilters.length}
-                    </Badge>
-                  )}
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="h-[90vh] flex flex-col">
-                <SheetHeader>
-                  <SheetTitle>Search & Filter</SheetTitle>
-                  <SheetDescription>Find the perfect property for you.</SheetDescription>
-                </SheetHeader>
-                <div className="flex-1 overflow-y-auto p-1">
-                  <div className="p-4">
-                    <FilterControls />
-                  </div>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[90vh] flex flex-col">
+              <SheetHeader>
+                <SheetTitle>Search & Filter</SheetTitle>
+                <SheetDescription>Find the perfect property for you.</SheetDescription>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto p-1">
+                <div className="p-4">
+                  <FilterControls />
                 </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-          <div className="hidden lg:block">
-            <FilterControls />
-          </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
 
-        {/* Active Filter Tags */}
-        {activeFilters.length > 0 && (
-          <div className="mb-6 flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-medium">Active Filters:</p>
-            {activeFilters.map((filter) => (
-              <Badge key={filter.label} variant="secondary" className="pl-2">
-                {filter.label}
-                <button
-                  onClick={() => removeFilter(filter.type, filter.value)}
-                  className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
-                  aria-label={`Remove ${filter.label} filter`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
+          <aside className="hidden lg:col-span-4 lg:block">
+            <div className="sticky top-20 rounded-lg border bg-card p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Refine Your Search</h3>
+                {activeFilters.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm">
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+              <FilterControls />
+            </div>
+          </aside>
 
-        {/* ===== SECTION 6: Listings Grid ===== */}
-        <div id="listings-section">
+          <section id="listings-section" className="lg:col-span-8">
+            {activeFilters.length > 0 && (
+              <div className="mb-6 flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-medium">Active Filters:</p>
+                {activeFilters.map((filter) => (
+                  <Badge key={filter.label} variant="secondary" className="pl-2">
+                    {filter.label}
+                    <button
+                      onClick={() => removeFilter(filter.type, filter.value)}
+                      className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                      aria-label={`Remove ${filter.label} filter`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+
           {(loading || isPending) && listings.length === 0 ? (
             <div>
               <div className="mb-6 flex items-center justify-center gap-2 text-muted-foreground">
@@ -427,13 +424,13 @@ function ListingsContent() {
           ) : listings.length > 0 ? (
             <>
               <div className="mb-4 text-sm text-muted-foreground">
-                Showing {listings.length} properties
+                Showing {listings.length} verified properties
               </div>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {listings.map((listing, index) => (
                   <Card
                     key={listing.id}
-                    className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-soft-fade-scale"
+                    className="flex cursor-pointer flex-col overflow-hidden border border-border transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg animate-soft-fade-scale"
                     style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
                   >
                     <CardHeader className="relative p-0">
@@ -443,38 +440,47 @@ function ListingsContent() {
                           alt={listing.title}
                           width={600}
                           height={400}
-                          className="aspect-[3/2] w-full object-cover"
+                          className="aspect-[3/2] w-full object-cover transition-transform duration-300 hover:scale-105"
                           data-ai-hint={listing.images[0]?.hint || 'landscape'}
                         />
                       </Link>
                       <div className="absolute top-3 left-3 z-10">
                         <FavoriteButton listingId={listing.id} />
                       </div>
-                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                      <div className="absolute top-3 right-3">
                         {listing.badge && <TrustBadge badge={listing.badge} />}
-                        <StatusBadge status={listing.status} />
                       </div>
                     </CardHeader>
-                    <CardContent className="flex-1 p-4">
+                    <CardContent className="flex-1 space-y-3 p-4">
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <p className="flex items-center gap-1.5">
+                          <MapPin className="h-4 w-4" />
+                          <span>{listing.location}, {listing.county}</span>
+                        </p>
+                        <p>{listing.area} acres</p>
+                      </div>
                       <Link href={`/listings/${listing.id}`}>
                         <CardTitle className="mb-1 text-lg font-semibold tracking-tight hover:text-accent leading-tight">
                           {listing.title}
                         </CardTitle>
                       </Link>
-                      <CardDescription className="text-sm text-muted-foreground">
-                        {listing.location}, {listing.county}
+                      <CardDescription className="line-clamp-2 text-sm text-muted-foreground">
+                        {listing.description}
                       </CardDescription>
-                      <p className="text-sm text-foreground/80 mt-2 flex items-center gap-2">
-                        <LandPlot className="h-4 w-4 text-accent" />
-                        {listing.area} Acres
-                      </p>
+                      <div className="flex items-center justify-between border-t pt-2 text-xs text-muted-foreground">
+                        <p className="flex items-center gap-1.5">
+                          <FileText className="h-3.5 w-3.5" />
+                          {listing.evidence?.length ?? 0} documents
+                        </p>
+                        <StatusBadge status={listing.status} />
+                      </div>
                     </CardContent>
                     <CardFooter className="p-4 pt-0 flex justify-between items-center">
                       <p className="text-xl font-bold text-primary">
                         Ksh {listing.price.toLocaleString()}
                       </p>
-                      <Button asChild>
-                        <Link href={`/listings/${listing.id}`}>View</Link>
+                      <Button asChild variant="ghost" className="text-primary hover:text-primary">
+                        <Link href={`/listings/${listing.id}`}>View Details</Link>
                       </Button>
                     </CardFooter>
                   </Card>
@@ -497,6 +503,9 @@ function ListingsContent() {
             </>
           ) : (
             <div className="text-center py-20 rounded-lg border-2 border-dashed">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <Inbox className="h-8 w-8 text-muted-foreground" />
+              </div>
               <p className="text-muted-foreground text-lg font-medium">
                 {activeFilters.length > 0 ? 'No properties match your filters.' : 'No listings found yet.'}
               </p>
@@ -512,6 +521,7 @@ function ListingsContent() {
               )}
             </div>
           )}
+          </section>
         </div>
       </div>
 
