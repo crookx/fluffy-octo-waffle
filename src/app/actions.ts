@@ -960,8 +960,42 @@ export async function getRecentConversationsForUser(userId: string, limit: numbe
         .limit(limit)
         .get();
         
-    return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-    }) as Conversation);
+  // Helper to normalize Firestore Timestamps (or legacy _seconds objects) to Date
+  const normalizeTimestamp = (ts: any): Date | null => {
+    if (!ts) return null;
+    // firebase-admin Timestamp instance
+    if (ts.toDate && typeof ts.toDate === 'function') return ts.toDate();
+    // Firestore client/server representation with _seconds/_nanoseconds
+    if (typeof ts === 'object' && (typeof ts._seconds === 'number' || typeof ts.seconds === 'number')) {
+      const seconds = ts._seconds ?? ts.seconds;
+      const nanos = ts._nanoseconds ?? ts.nanoseconds ?? 0;
+      return new Date(seconds * 1000 + Math.floor(nanos / 1e6));
+    }
+    // Fallback: if it's already a Date
+    if (ts instanceof Date) return ts;
+    return null;
+  };
+
+  return snapshot.docs.map(doc => {
+    const raw = doc.data() as any;
+
+    const normalized: Conversation = {
+      id: doc.id,
+      listingId: raw.listingId,
+      listingTitle: raw.listingTitle,
+      listingImage: raw.listingImage,
+      participantIds: raw.participantIds || [],
+      participants: raw.participants || {},
+      lastMessage: raw.lastMessage
+        ? {
+            ...raw.lastMessage,
+            timestamp: normalizeTimestamp(raw.lastMessage.timestamp),
+          }
+        : null,
+      updatedAt: normalizeTimestamp(raw.updatedAt),
+      status: raw.status,
+    } as Conversation;
+
+    return normalized;
+  });
 }

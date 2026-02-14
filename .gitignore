@@ -47,3 +47,4 @@ firestore-debug.log
 serviceAccountKey.json
 
 logs.txt
+.github/copilot-instructions.md

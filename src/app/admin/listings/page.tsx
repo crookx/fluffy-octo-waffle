@@ -33,6 +33,7 @@ export default function AdminListingsPage() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [lastVisibleId, setLastVisibleId] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
 
   const pageSize = 12;
 
@@ -147,6 +148,14 @@ export default function AdminListingsPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Listings</CardTitle>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant={viewMode === 'table' ? 'default' : 'outline'} onClick={() => setViewMode('table')}>
+                  Table
+                </Button>
+                <Button size="sm" variant={viewMode === 'kanban' ? 'default' : 'outline'} onClick={() => setViewMode('kanban')}>
+                  Kanban
+                </Button>
+              </div>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => handleBulk("approved")} disabled={selectedIds.length === 0}>
                   Approve Selected
@@ -198,6 +207,47 @@ export default function AdminListingsPage() {
           ) : listings.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed rounded-lg">
               <p className="text-muted-foreground">No listings match the current filters.</p>
+            </div>
+          ) : viewMode === 'kanban' ? (
+            <div className="grid gap-4 lg:grid-cols-3">
+              {(['pending', 'approved', 'rejected'] as const).map((status) => {
+                const items = listings.filter((l) => l.status === status);
+                return (
+                  <div key={status} className="rounded-lg border bg-muted/20 p-3">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold capitalize">{status}</h3>
+                      <Badge variant="outline">{items.length}</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {items.length === 0 ? (
+                        <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">No listings</div>
+                      ) : (
+                        items.map((l) => (
+                          <div key={l.id} className="rounded-md border bg-background p-3">
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                              <Link href={`/admin/listings/${l.id}`} className="line-clamp-1 text-sm font-medium hover:underline">
+                                {l.title}
+                              </Link>
+                              <Checkbox
+                                checked={!!selected[l.id]}
+                                onCheckedChange={() => toggleSelect(l.id)}
+                                aria-label={`Select listing ${l.title}`}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">{l.location} • Ksh {l.price.toLocaleString()}</p>
+                            <div className="mt-2 flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">{l.landType}</Badge>
+                              <Button asChild variant="ghost" size="sm" className="h-7 px-2">
+                                <Link href={`/admin/listings/${l.id}`}>Open</Link>
+                              </Button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="space-y-2">
