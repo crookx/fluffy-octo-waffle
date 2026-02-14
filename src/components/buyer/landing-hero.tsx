@@ -8,7 +8,13 @@ import Link from 'next/link';
  * LandingHero - Hero section for the landing page
  * Introduces platform value proposition and calls to action
  */
-export function LandingHero() {
+export function LandingHero({
+  verifiedListings = 0,
+  countiesCovered = 0,
+}: {
+  verifiedListings?: number;
+  countiesCovered?: number;
+}) {
   const handleExplore = () => {
     const listingsSection = document.getElementById('listings-section');
     if (listingsSection) {
@@ -24,7 +30,7 @@ export function LandingHero() {
           <div className="relative text-center space-y-6 sm:space-y-8">
             <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
               <BadgeCheck className="h-4 w-4" />
-              500+ verified listings across Kenya
+              {verifiedListings.toLocaleString()} verified listings across Kenya
             </div>
             <div className="space-y-3 sm:space-y-4">
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
@@ -39,11 +45,11 @@ export function LandingHero() {
             {/* Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto">
               <div className="rounded-lg border border-white/30 bg-white/10 p-4 backdrop-blur-sm">
-                <div className="text-2xl font-bold sm:text-3xl">500+</div>
+                <div className="text-2xl font-bold sm:text-3xl">{verifiedListings.toLocaleString()}</div>
                 <p className="mt-1 text-sm text-emerald-50/90">Verified Listings</p>
               </div>
               <div className="rounded-lg border border-white/30 bg-white/10 p-4 backdrop-blur-sm">
-                <div className="text-2xl font-bold sm:text-3xl">47</div>
+                <div className="text-2xl font-bold sm:text-3xl">{countiesCovered}</div>
                 <p className="mt-1 text-sm text-emerald-50/90">Counties Covered</p>
               </div>
               <div className="rounded-lg border border-white/30 bg-white/10 p-4 backdrop-blur-sm">

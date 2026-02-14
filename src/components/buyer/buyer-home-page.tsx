@@ -119,6 +119,20 @@ function ListingsContent() {
     return filters;
   }, [query, landType, priceRange, areaRange, badges]);
 
+  const countiesCovered = useMemo(
+    () => new Set(listings.map((listing) => listing.county).filter(Boolean)).size,
+    [listings],
+  );
+
+  const badgeDistribution = useMemo(
+    () => ({
+      Gold: listings.filter((listing) => listing.badge === 'Gold').length,
+      Silver: listings.filter((listing) => listing.badge === 'Silver').length,
+      Bronze: listings.filter((listing) => listing.badge === 'Bronze').length,
+    }),
+    [listings],
+  );
+
   const updateUrlParams = useDebouncedCallback(() => {
     const params = new URLSearchParams();
     if (query) params.set('query', query);
@@ -325,7 +339,7 @@ function ListingsContent() {
   return (
     <>
       {/* ===== SECTION 1: Hero & CTA ===== */}
-      <LandingHero />
+      <LandingHero verifiedListings={listings.length} countiesCovered={countiesCovered} />
 
       {/* ===== SECTION 2: How to Find - Step Guide ===== */}
       <HowToFind />
@@ -345,7 +359,7 @@ function ListingsContent() {
 
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="mb-12 sm:mb-16">
-          <BadgeLegend />
+          <BadgeLegend distribution={badgeDistribution} />
         </div>
 
         <div className="mb-4 lg:hidden">

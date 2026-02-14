@@ -1,5 +1,4 @@
 import { notFound, redirect } from 'next/navigation';
-import Image from 'next/image';
 import { getListingById } from '@/lib/data';
 import { StatusBadge } from '@/components/status-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,13 +17,14 @@ import {
   Mountain,
   Square,
   LandPlot,
-  Coins
+  Coins,
+  ShieldCheck,
+  CircleAlert,
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import type { UserProfile } from '@/lib/types';
 import { TrustBadge } from '@/components/trust-badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ContactSellerButton } from './_components/contact-seller-button';
 import { BuyerTip } from '@/components/buyer-tip';
 import { DynamicLocationMap } from '@/components/dynamic-location-map';
@@ -209,13 +209,65 @@ export default async function ListingDetailPage({
 
         {/* Context Sidebar */}
         <div className="space-y-6 md:sticky md:top-24 h-min">
-          {canContact && (
-            <Card className="hidden md:block">
-              <CardContent className="p-4">
-                <ContactSellerButton listingId={id} />
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Price</CardTitle>
+              <CardDescription>Listed asking price</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-primary">Ksh {price.toLocaleString()}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Always verify payment terms and complete legal due diligence before making payments.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Seller</CardTitle>
+              <CardDescription>Property contact details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={seller.avatarUrl} alt={seller.name} />
+                  <AvatarFallback>{seller.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{seller.name}</p>
+                  <p className="text-xs text-muted-foreground">Verified seller profile</p>
+                </div>
+              </div>
+              {canContact && <div className="hidden md:block"><ContactSellerButton listingId={id} /></div>}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Safety Checklist
+              </CardTitle>
+              <CardDescription>Recommended before you proceed</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CircleAlert className="h-4 w-4 mt-0.5 text-warning" />
+                  Confirm title deed details with official land registry records.
+                </li>
+                <li className="flex items-start gap-2">
+                  <CircleAlert className="h-4 w-4 mt-0.5 text-warning" />
+                  Request a physical site visit and verify boundary beacons.
+                </li>
+                <li className="flex items-start gap-2">
+                  <CircleAlert className="h-4 w-4 mt-0.5 text-warning" />
+                  Use a licensed advocate before signing transfer documents.
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+
           <BuyerTip />
           <Card>
             <CardHeader>

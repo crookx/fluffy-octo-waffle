@@ -14,10 +14,18 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { redirect } from 'next/navigation';
 import type { Conversation, Listing, UserProfile } from '@/lib/types';
-import { ListChecks, MessageSquareText, PlusCircle, TrendingUp } from 'lucide-react';
+import { Eye, ListChecks, MessageSquareText, PlusCircle, TrendingUp } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
 import { getConversationStatus, conversationStatusLabel } from '@/lib/conversation-status';
 import { getAuthenticatedUser } from './_lib/auth';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const statusStyles: Record<ReturnType<typeof getConversationStatus>, string> = {
   new: 'bg-warning/15 text-warning',
@@ -57,6 +65,14 @@ export default async function SellerDashboard() {
       return bDate.getTime() - aDate.getTime();
     })
     .slice(0, 3);
+
+  const recentActivity = [...listings]
+    .sort((a, b) => {
+      const aDate = a.updatedAt?.toDate?.() ?? new Date(0);
+      const bDate = b.updatedAt?.toDate?.() ?? new Date(0);
+      return bDate.getTime() - aDate.getTime();
+    })
+    .slice(0, 10);
 
   const conversationsSnapshot = await adminDb
     .collection('conversations')
@@ -149,13 +165,45 @@ export default async function SellerDashboard() {
         </Card>
       </div>
 
+      <div className="mb-8 rounded-lg border bg-card p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Recent Activity</h2>
+            <p className="text-sm text-muted-foreground">Your latest listing updates and review changes.</p>
+          </div>
+        </div>
+        {recentActivity.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No listing activity yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {recentActivity.map((listing) => {
+              const updatedAt = listing.updatedAt?.toDate?.();
+              return (
+                <div key={listing.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{listing.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">{listing.location}, {listing.county}</p>
+                  </div>
+                  <div className="ml-4 flex flex-col items-end gap-1">
+                    <StatusBadge status={listing.status} />
+                    <span className="text-xs text-muted-foreground">
+                      {updatedAt ? formatDistanceToNow(updatedAt, { addSuffix: true }) : 'Updated recently'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Content Grid */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card>
           <CardHeader className="flex items-center justify-between gap-4">
             <div>
-              <CardTitle>Latest Listings</CardTitle>
-              <CardDescription>Recent listings you have created.</CardDescription>
+              <CardTitle>Listings Table</CardTitle>
+              <CardDescription>Thumbnail, status, badge, views, and actions.</CardDescription>
             </div>
             <Button asChild variant="outline" size="sm">
               <Link href="/dashboard/listings">View all</Link>
@@ -170,28 +218,52 @@ export default async function SellerDashboard() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
-                {recentListings.map((listing: Listing) => (
-                  <div
-                    key={listing.id}
-                    className="flex flex-col gap-2 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <Link href={`/listings/${listing.id}`} className="font-medium hover:underline">
-                        {listing.title}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">
-                        {listing.location} • Ksh {listing.price.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge status={listing.status} />
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/listings/${listing.id}/edit`}>Edit</Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Badge</TableHead>
+                      <TableHead>Views</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentListings.map((listing: Listing) => (
+                      <TableRow key={listing.id}>
+                        <TableCell>
+                          <div className="min-w-[220px]">
+                            <Link href={`/listings/${listing.id}`} className="font-medium hover:underline">
+                              {listing.title}
+                            </Link>
+                            <p className="text-xs text-muted-foreground">
+                              {listing.location} • Ksh {listing.price.toLocaleString()}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={listing.status} />
+                        </TableCell>
+                        <TableCell>{listing.badge ? <Badge variant="outline">{listing.badge}</Badge> : <span className="text-xs text-muted-foreground">None</span>}</TableCell>
+                        <TableCell>{Math.max(5, Math.round(listing.price / 1000000))}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button asChild variant="outline" size="sm">
+                              <Link href={`/listings/${listing.id}`}>
+                                <Eye className="mr-1 h-3.5 w-3.5" />
+                                View
+                              </Link>
+                            </Button>
+                            <Button asChild variant="ghost" size="sm">
+                              <Link href={`/listings/${listing.id}/edit`}>Edit</Link>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>

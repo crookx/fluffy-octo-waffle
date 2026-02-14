@@ -8,14 +8,21 @@ import { Award, Check, Gem, Trophy } from 'lucide-react';
  * BadgeLegend - Explains what trust badges mean
  * Shows what Gold, Silver, and Bronze badges represent
  */
-export function BadgeLegend() {
+export function BadgeLegend({
+  distribution,
+}: {
+  distribution?: Partial<Record<'Gold' | 'Silver' | 'Bronze', number>>;
+}) {
+  const total = (distribution?.Gold || 0) + (distribution?.Silver || 0) + (distribution?.Bronze || 0);
+  const pct = (value: number) => (total > 0 ? `${Math.round((value / total) * 100)}% of listings` : 'No data yet');
+
   const badges = [
     {
       name: 'Gold',
       icon: Trophy,
       color: 'text-amber-600',
       bg: 'bg-amber-100',
-      percentage: '18% of listings',
+      percentage: pct(distribution?.Gold || 0),
       requirements: ['Title deed uploaded', 'Land survey uploaded', 'Rate clearance uploaded', 'Seller ID verified', '3+ photos uploaded'],
       description: 'Highest trust level with complete and verified legal documentation.',
     },
@@ -24,7 +31,7 @@ export function BadgeLegend() {
       icon: Gem,
       color: 'text-slate-600',
       bg: 'bg-slate-100',
-      percentage: '36% of listings',
+      percentage: pct(distribution?.Silver || 0),
       requirements: ['Title deed or survey uploaded', 'Seller ID verified', '2+ photos uploaded'],
       description: 'Strong documentation coverage with key records verified.',
     },
@@ -33,7 +40,7 @@ export function BadgeLegend() {
       icon: Award,
       color: 'text-orange-600',
       bg: 'bg-orange-100',
-      percentage: '46% of listings',
+      percentage: pct(distribution?.Bronze || 0),
       requirements: ['At least one document uploaded', 'Basic listing information complete'],
       description: 'Starter trust level with basic documentation submitted.',
     },
